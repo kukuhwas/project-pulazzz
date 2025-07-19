@@ -1,0 +1,70 @@
+.main-container-limited {
+    max-width: 600px;
+    /* Anda bisa sesuaikan lebar maksimal ini */
+    margin-left: auto;
+    /* Tambahan untuk centering */
+    margin-right: auto;
+    /* Tambahan untuk centering */
+}
+
+/* Efek tombol ditekan */
+/* Memberikan transisi yang mulus untuk semua tombol */
+.btn {
+  transition: transform 0.1s ease-out;
+}
+
+/* Efek saat tombol sedang ditekan (active) */
+.btn:active {
+  transform: scale(0.97);
+  box-shadow: none; /* Opsional: hilangkan bayangan saat ditekan */
+}
+
+
+/* Membuat placeholder lebih transparan/seamless */
+.form-control::placeholder {
+  color: #ced4da; /* Warna abu-abu yang lebih terang dari default Bootstrap */
+  font-style: italic; /* Membuat tulisan miring agar lebih terlihat sebagai petunjuk */
+}
+
+/* Warna background kustom untuk header */
+.header-bg {
+    background-color: #253d8d;
+}
+
+/* Mengatur tinggi logo di header agar tidak terlalu besar */
+.header-logo {
+    height: 40px;
+    /* Anda bisa sesuaikan ukurannya */
+}
+
+/* warna status produksi */
+
+.status-select {
+    border-width: 2px;
+    font-weight: 500;
+}
+
+.status-new_order {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.status-in_production {
+    border-color: #ffc107;
+    color: #ffc107;
+}
+
+.status-shipped {
+    border-color: #0dcaf0;
+    color: #0dcaf0;
+}
+
+.status-completed {
+    border-color: #198754;
+    color: #198754;
+}
+
+.status-cancelled {
+    border-color: #dc3545;
+    color: #dc3545;
+}

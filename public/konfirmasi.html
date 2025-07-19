@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfirmasi Pesanan - Sistem Order Pulazzz</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/print.css" rel="stylesheet" media="print">
+</head>
+
+<body>
+    <header>
+        <nav class="navbar navbar-dark header-bg">
+            <div class="container d-flex justify-content-between align-items-center">
+                <a class="navbar-brand d-flex align-items-center" href="index.html">
+                    <img src="assets/logo-pulazzz-putih.png" alt="Logo Pulazzz" class="header-logo me-2">
+                    <span class="d-none d-sm-inline">Order System</span>
+                </a>
+                <div class="d-flex align-items-center">
+                    <a href="dashboard.html" class="btn btn-outline-light btn-sm me-3">Dashboard</a>
+                    <button class="btn btn-danger btn-sm" id="logout-btn">Logout</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main class="container mt-5 main-container-limited">
+        <div id="order-details-card" class="card shadow-sm">
+            <div id="confirmation-header" class="card-header text-white">
+                <h4 class="my-0" id="confirmation-title">Memuat...</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row mb-4">
+                    <div class="col-sm-6">
+                        <h5 class="mb-3">Detail Pelanggan:</h5>
+                        <p class="mb-1"><strong>Nama:</strong> <span id="customer-name">-</span></p>
+                        <p class="mb-1"><strong>No. HP:</strong> <span id="customer-phone">-</span></p>
+                    </div>
+                    <div class="col-sm-6 text-sm-end">
+                        <h5 class="mb-3">No. Pesanan:</h5>
+                        <h4 class="mb-1"><span class="badge bg-secondary" id="order-display-id">Memuat...</span></h4>
+                        <p class="mb-1"><strong>Tanggal:</strong> <span id="order-date">-</span></p>
+                        <p class="mb-1"><strong>Dibuat Oleh:</strong> <span id="creator-email">-</span></p>
+
+                    </div>
+                </div>
+
+                <h5 class="mb-3">Rincian Produk:</h5>
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">Produk</th>
+                                <th scope="col">Ukuran</th>
+                                <th scope="col" class="text-center">Qty</th>
+                                <th scope="col" class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="item-list">
+                        </tbody>
+
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end border-0"><strong>Total Pembayaran:</strong></td>
+                                <td class="text-end border-0"><strong class="h5" id="total-amount">Rp 0</strong></td>
+                            </tr>
+                        </tfoot>
+
+                    </table>
+
+                </div>
+
+                <hr class="my-4">
+
+                <h5 class="mb-3">Alamat Pengiriman:</h5>
+                <p id="shipping-address" class="text-muted">-</p>
+            </div>
+            <div class="card-footer text-center no-print p-3">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <button class="btn btn-primary" id="print-btn">🖨️ Cetak / Simpan PDF</button>
+                    <button class="btn btn-success d-none" id="send-email-btn" disabled>📧 Kirim Email Produksi</button>
+                    <a href="index.html" class="btn btn-secondary">Buat Pesanan Baru</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/konfirmasi.js"></script>
+    <script type="module" src="js/auth-guard.js"></script>
+
+
+</body>
+
+</html>
