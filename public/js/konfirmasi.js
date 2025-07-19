@@ -1,5 +1,5 @@
 import { db, auth, functions } from './firebase-config.js';
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
@@ -9,9 +9,35 @@ const sendEmailBtn = document.getElementById('send-email-btn');
 const orderDetailsCard = document.getElementById('order-details-card');
 const confirmationHeader = document.getElementById('confirmation-header');
 const confirmationTitle = document.getElementById('confirmation-title');
+const detailsLoadingIndicator = document.getElementById('details-loading-indicator');
+const detailsContentWrapper = document.getElementById('details-content-wrapper');
 
 // --- Fungsi Bantuan ---
 const formatCurrency = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
+
+function displayOrderData(data, userRole) {
+  document.getElementById('order-display-id').textContent = data.displayId || "Memproses...";
+  document.getElementById('creator-email').textContent = data.creator?.email || 'N/A';
+  document.getElementById('customer-name').textContent = data.customerInfo.name;
+  document.getElementById('customer-phone').textContent = data.customerInfo.phone;
+  const date = data.createdAt.toDate();
+  document.getElementById('order-date').textContent = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  const addr = data.shippingAddress;
+  document.getElementById('shipping-address').textContent = `${addr.fullAddress}, ${addr.district}, ${addr.city}, ${addr.province}`;
+  document.getElementById('total-amount').textContent = formatCurrency(data.totalAmount);
+  const itemListTbody = document.getElementById('item-list');
+  itemListTbody.innerHTML = '';
+  data.items.forEach(item => {
+    const row = `<tr><td>${item.productType}</td><td>${item.size}</td><td class="text-center">${item.quantity}</td><td class="text-end">${formatCurrency(item.subtotal)}</td></tr>`;
+    itemListTbody.innerHTML += row;
+  });
+
+  // Tampilkan tombol kirim email hanya untuk admin
+  if (userRole === 'admin') {
+    sendEmailBtn.classList.remove('d-none');
+    sendEmailBtn.disabled = false;
+  }
+}
 
 // --- Fungsi Utama ---
 function initializePage() {
@@ -24,7 +50,7 @@ function initializePage() {
   });
 }
 
-async function loadOrderDetails(userRole) {
+function loadOrderDetails(userRole) {
   const params = new URLSearchParams(window.location.search);
   const orderId = params.get('order_id');
   const isNewOrder = params.get('new') === 'true';
@@ -44,54 +70,37 @@ async function loadOrderDetails(userRole) {
   }
   
   sendEmailBtn.dataset.orderId = orderId;
+  
+  detailsLoadingIndicator.classList.remove('d-none');
+  detailsContentWrapper.classList.add('d-none');
 
-  try {
-    const orderRef = doc(db, "orders", orderId);
-    const orderSnap = await getDoc(orderRef);
+  const orderRef = doc(db, "orders", orderId);
 
-    if (orderSnap.exists()) {
-      const orderData = orderSnap.data();
-      
-      const displayData = (data) => {
-        document.getElementById('order-display-id').textContent = data.displayId || "Memproses...";
-        document.getElementById('creator-email').textContent = data.creator?.email || 'N/A';
-        document.getElementById('customer-name').textContent = data.customerInfo.name;
-        document.getElementById('customer-phone').textContent = data.customerInfo.phone;
-        const date = data.createdAt.toDate();
-        document.getElementById('order-date').textContent = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-        const addr = data.shippingAddress;
-        document.getElementById('shipping-address').textContent = `${addr.fullAddress}, ${addr.district}, ${addr.city}, ${addr.province}`;
-        document.getElementById('total-amount').textContent = formatCurrency(data.totalAmount);
-        const itemListTbody = document.getElementById('item-list');
-        itemListTbody.innerHTML = '';
-        data.items.forEach(item => {
-          const row = `<tr><td>${item.productType}</td><td>${item.size}</td><td class="text-center">${item.quantity}</td><td class="text-end">${formatCurrency(item.subtotal)}</td></tr>`;
-          itemListTbody.innerHTML += row;
-        });
+  // Gunakan onSnapshot untuk mendengarkan perubahan secara real-time
+  const unsubscribe = onSnapshot(orderRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const orderData = docSnap.data();
+      displayOrderData(orderData, userRole);
 
-        // Tampilkan tombol kirim email hanya untuk admin
-        if (userRole === 'admin') {
-          sendEmailBtn.classList.remove('d-none');
-          sendEmailBtn.disabled = false;
-        }
-      };
-      
-      // Menangani jeda waktu (race condition) untuk displayId
-      if (!orderData.displayId) {
-        setTimeout(async () => {
-          const updatedSnap = await getDoc(orderRef);
-          if (updatedSnap.exists()) displayData(updatedSnap.data());
-        }, 1500);
-      } else {
-        displayData(orderData);
+      // Sembunyikan loader dan tampilkan konten setelah data pertama diterima
+      detailsLoadingIndicator.classList.add('d-none');
+      detailsContentWrapper.classList.remove('d-none');
+
+      // Jika displayId sudah ada, berhenti mendengarkan untuk menghemat resource
+      if (orderData.displayId) {
+        unsubscribe();
       }
-    } else { 
+    } else {
       orderDetailsCard.innerHTML = `<div class="card-body text-center"><p class="text-danger">Pesanan dengan ID ${orderId} tidak ditemukan.</p></div>`;
+      unsubscribe(); // Berhenti mendengarkan jika dokumen tidak ada
     }
-  } catch (error) {
+  }, (error) => {
     console.error("Error getting document:", error);
     orderDetailsCard.innerHTML = `<div class="card-body text-center"><p class="text-danger">Gagal memuat data pesanan. Error: ${error.message}</p></div>`;
-  }
+    detailsLoadingIndicator.classList.add('d-none');
+    detailsContentWrapper.classList.add('d-none');
+    unsubscribe(); // Berhenti mendengarkan jika terjadi error
+  });
 }
 
 // --- Event Listeners ---

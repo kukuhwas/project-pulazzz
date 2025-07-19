@@ -42,14 +42,21 @@
                         </div>
                         <div class="col-md-3">
                             <label for="new-user-password" class="form-label">Password Awal</label>
-                            <input type="password" class="form-control" id="new-user-password" required>
+                            <input type="password" class="form-control" id="new-user-password" required minlength="6">
                         </div>
                         <div class="col-md-3">
                             <label for="new-user-role" class="form-label">Peran</label>
                             <select id="new-user-role" class="form-select" required>
                                 <option value="sales" selected>Sales</option>
+                                <option value="representatif">Representatif</option>
                                 <option value="produksi">Produksi</option>
                                 <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3" id="representative-select-wrapper" style="display: none;">
+                            <label for="new-user-representative" class="form-label">Atasan (Rep.)</label>
+                            <select id="new-user-representative" class="form-select">
+                                <option value="">Pilih Atasan...</option>
                             </select>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
@@ -71,12 +78,13 @@
                         <thead>
                             <tr>
                                 <th>Email</th>
-                                <th>Peran Saat Ini</th>
-                                <th>Ubah Peran</th>
-                                <th>Aksi</th>
+                                <th>Peran</th>
+                                <th>Atasan (Rep.)</th>
+                                <th style="width: 220px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="user-list-tbody">
+                            <!-- Baris pengguna akan diisi oleh admin.js -->
                         </tbody>
                     </table>
                 </div>

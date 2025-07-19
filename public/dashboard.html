@@ -52,7 +52,40 @@
 
         <div id="orders-container">
         </div>
+        <div id="load-more-spinner" class="text-center my-4 d-none">
+            <div class="spinner-border text-secondary" role="status">
+                <span class="visually-hidden">Loading more...</span>
+            </div>
+        </div>
+        <div id="load-more-trigger" style="height: 1px;"></div>
         <p id="no-orders-message" class="text-center text-muted d-none">Tidak ada pesanan dengan status ini.</p>
+
+        <!-- Modal Konfirmasi Perubahan Status -->
+        <div class="modal fade" id="status-change-modal" tabindex="-1" aria-labelledby="statusChangeModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="statusChangeModalLabel">Konfirmasi Perubahan Status</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Untuk mengonfirmasi perubahan status pesanan <strong id="modal-order-id"></strong> menjadi
+                            <strong id="modal-next-status"></strong>, silakan ketik ulang nomor pesanan di bawah ini.</p>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="modal-confirm-input" placeholder="Ketik nomor pesanan di sini...">
+                            <div class="form-text">Tombol "Ya, Ubah Status" akan aktif jika nomor pesanan sesuai.</div>
+                        </div>
+                        <p class="text-muted small mt-2">Tindakan ini tidak dapat dibatalkan.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-primary" id="confirm-status-change-btn" disabled>Ya, Ubah Status</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
     </main>
 

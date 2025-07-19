@@ -1,23 +1,30 @@
 import { db, auth } from './firebase-config.js';
 import { collection, doc, addDoc, serverTimestamp, getDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
-// --- Referensi Elemen & API ---
+// --- Referensi Elemen & State ---
 const orderForm = document.getElementById('order-form');
 const customerPhoneInput = document.getElementById('customer-phone');
 const provinceSelect = document.getElementById('address-province');
 const citySelect = document.getElementById('address-city');
 const districtSelect = document.getElementById('address-district');
+const productDetailsWrapper = document.getElementById('product-details-wrapper');
+const productListTbody = document.getElementById('product-list');
+const productSizeSelect = document.getElementById('product-size');
+const productQtyInput = document.getElementById('product-qty');
+const addProductBtn = document.getElementById('add-product-btn');
+const validationModal = new bootstrap.Modal(document.getElementById('validationModal'));
+const fullPageLoader = document.getElementById('full-page-loader');
 
-let cartItems = []; // State management untuk produk
+let cartItems = []; // State management untuk produk di keranjang
 
 // --- Validasi Real-time Nomor HP ---
 customerPhoneInput.addEventListener('input', (event) => {
     event.target.value = event.target.value.replace(/\D/g, '');
 });
 
-// --- FUNGSI VERSI FIRESTORE
+// --- Fungsi untuk Mengisi Dropdown Alamat dari Firestore ---
 async function populateDropdown(collectionName, selectElement, filterField, filterValue) {
-    selectElement.length = 1;
+    selectElement.length = 1; // Reset dropdown ke opsi default
     selectElement.disabled = true;
     try {
         let q;
@@ -28,7 +35,6 @@ async function populateDropdown(collectionName, selectElement, filterField, filt
         }
         const querySnapshot = await getDocs(q);
         querySnapshot.forEach((doc) => {
-            // Data di Firestore menggunakan field 'name' dan doc.id
             const option = new Option(doc.data().name, doc.id);
             selectElement.add(option);
         });
@@ -40,8 +46,7 @@ async function populateDropdown(collectionName, selectElement, filterField, filt
     }
 }
 
-
-// --- Event Listeners untuk Alamat (Disesuaikan untuk Firestore) ---
+// --- Event Listeners untuk Alamat ---
 document.addEventListener('DOMContentLoaded', () => {
     populateDropdown('provinces', provinceSelect);
 });
@@ -63,36 +68,33 @@ citySelect.addEventListener('change', (e) => {
     }
 });
 
-
-// ... Sisa kode untuk tambah produk dan submit form tidak berubah dan bisa disalin dari versi final sebelumnya ...
-const productDetailsWrapper = document.getElementById('product-details-wrapper');
-const productListTbody = document.getElementById('product-list');
-const productSizeSelect = document.getElementById('product-size');
-const productQtyInput = document.getElementById('product-qty');
-const addProductBtn = document.getElementById('add-product-btn');
-const validationModal = new bootstrap.Modal(document.getElementById('validationModal'));
+// --- Logika Keranjang Belanja (Cart) ---
 
 function renderProductInTable(item) {
     const rowId = `row-${item.productId}`;
     const existingRow = document.getElementById(rowId);
-    if (existingRow) existingRow.remove();
+    if (existingRow) existingRow.remove(); // Hapus baris lama untuk di-render ulang
+    
     const newRow = document.createElement('tr');
     newRow.id = rowId;
-    newRow.innerHTML = `<td>${item.productType}</td><td>${item.size}</td><td class="text-center">${item.quantity}</td><td><button type="button" class="btn btn-danger btn-sm">Hapus</button></td>`;
+    newRow.innerHTML = `
+        <td>${item.productType}</td>
+        <td>${item.size}</td>
+        <td class="text-center">${item.quantity}</td>
+        <td><button type="button" class="btn btn-danger btn-sm">Hapus</button></td>
+    `;
+    
     newRow.querySelector('button').addEventListener('click', () => {
         cartItems = cartItems.filter(cartItem => cartItem.productId !== item.productId);
         newRow.remove();
-
         if (cartItems.length === 0) {
-            productDetailsWrapper.classList.add('d-none'); // Sembunyikan lagi jika keranjang kosong
+            productDetailsWrapper.classList.add('d-none');
         }
-
-
     });
+    
     productListTbody.appendChild(newRow);
 }
 
-// GANTI SELURUH FUNGSI INI dengan kode di bawah
 addProductBtn.addEventListener('click', async () => {
     const type = document.querySelector('input[name="product-type"]:checked')?.value;
     const size = productSizeSelect.value;
@@ -103,9 +105,7 @@ addProductBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Tampilkan tabel detail produk jika belum terlihat
     productDetailsWrapper.classList.remove('d-none');
-
     const productId = `${type.toLowerCase().replace(' ', '_')}_${size.replace('x', '')}`;
 
     try {
@@ -117,20 +117,15 @@ addProductBtn.addEventListener('click', async () => {
         }
 
         const productData = productSnap.data();
-
-        // --- INI BAGIAN LOGIKA YANG DIPERBAIKI ---
-
-        // 1. Cek apakah produk sudah ada di keranjang (cartItems)
         const existingItemIndex = cartItems.findIndex(item => item.productId === productId);
 
         if (existingItemIndex > -1) {
-            // 2. Jika SUDAH ADA, perbarui jumlah dan subtotalnya
+            // Jika produk sudah ada, update jumlahnya
             cartItems[existingItemIndex].quantity += quantity;
             cartItems[existingItemIndex].subtotal = cartItems[existingItemIndex].quantity * cartItems[existingItemIndex].priceAtPurchase;
-            // Render ulang baris dengan data yang sudah diperbarui
             renderProductInTable(cartItems[existingItemIndex]);
         } else {
-            // 3. Jika BELUM ADA, buat item baru dan tambahkan ke keranjang
+            // Jika produk baru, tambahkan ke keranjang
             const newCartItem = {
                 productId,
                 productType: type,
@@ -140,7 +135,6 @@ addProductBtn.addEventListener('click', async () => {
                 subtotal: productData.price * quantity
             };
             cartItems.push(newCartItem);
-            // Render baris untuk item baru
             renderProductInTable(newCartItem);
         }
 
@@ -150,20 +144,17 @@ addProductBtn.addEventListener('click', async () => {
     }
 });
 
-// --- Logika Submit Form (Diperbarui) ---
+// --- Logika Submit Form ---
 orderForm.addEventListener('submit', async (event) => {
-  // Selalu cegah aksi default form di awal
   event.preventDefault();
   event.stopPropagation();
 
-  // Cek validasi form dari Bootstrap
   if (!orderForm.checkValidity()) {
-    orderForm.classList.add('was-validated'); // Tampilkan error di field yang salah
-    validationModal.show(); // Tampilkan dialog modal
-    return; // Hentikan eksekusi
+    orderForm.classList.add('was-validated');
+    validationModal.show();
+    return;
   }
 
-  // Cek apakah keranjang kosong
   if (cartItems.length === 0) {
     alert('Keranjang pesanan kosong. Harap tambahkan produk terlebih dahulu.');
     return;
@@ -172,16 +163,17 @@ orderForm.addEventListener('submit', async (event) => {
   const currentUser = auth.currentUser;
   if (!currentUser) {
     alert("Sesi Anda telah berakhir. Silakan login kembali.");
+    window.location.href = 'login.html';
     return;
   }
 
-  // --- Mulai proses penyimpanan (jika semua validasi lolos) ---
-  const submitButton = orderForm.querySelector('button[type="submit"]');
-  submitButton.disabled = true;
-  submitButton.textContent = 'Menyimpan...';
+  // Ambil token untuk mendapatkan custom claims (peran dan ID representatif)
+  const idTokenResult = await currentUser.getIdTokenResult();
+  const claims = idTokenResult.claims;
+  
+  fullPageLoader.classList.remove('d-none');
 
   try {
-    // ... (sisa kode untuk mengumpulkan dan menyimpan data ke Firestore tidak berubah)
     const customerName = document.getElementById('customer-name').value;
     const customerPhone = `62${document.getElementById('customer-phone').value}`;
     const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').nextElementSibling.textContent.trim();
@@ -193,6 +185,16 @@ orderForm.addEventListener('submit', async (event) => {
     };
     const totalAmount = cartItems.reduce((total, item) => total + item.subtotal, 0);
 
+    // Tentukan nilai untuk field representativeId berdasarkan peran pengguna
+    let representativeIdForOrder = null;
+    if (claims.role === 'representatif') {
+      // Jika yang membuat adalah representatif, gunakan UID-nya sendiri
+      representativeIdForOrder = currentUser.uid;
+    } else if (claims.role === 'sales' && claims.representativeId) {
+      // Jika yang membuat adalah sales, gunakan representativeId dari claims-nya
+      representativeIdForOrder = claims.representativeId;
+    }
+
     const orderData = {
         creator: { uid: currentUser.uid, email: currentUser.email },
         customerInfo: { name: customerName, phone: customerPhone },
@@ -201,7 +203,8 @@ orderForm.addEventListener('submit', async (event) => {
         paymentMethod: paymentMethod,
         totalAmount: totalAmount,
         status: 'new_order',
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        representativeId: representativeIdForOrder // Tambahkan field baru ini
     };
     
     const newOrderRef = await addDoc(collection(db, 'orders'), orderData);
@@ -211,7 +214,7 @@ orderForm.addEventListener('submit', async (event) => {
   } catch (error) {
     console.error("Gagal menyimpan pesanan:", error);
     alert('Terjadi kesalahan saat menyimpan pesanan.');
-    submitButton.disabled = false;
-    submitButton.textContent = 'Buat Pesanan';
+  } finally {
+    fullPageLoader.classList.add('d-none');
   }
 });

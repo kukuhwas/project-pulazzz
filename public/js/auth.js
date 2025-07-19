@@ -16,9 +16,15 @@ loginForm.addEventListener('submit', async (event) => {
   
   try {
     // Coba login dengan Firebase Auth
-    await signInWithEmailAndPassword(auth, email, password);
-    // Jika berhasil, Firebase akan menangani sesi, lalu arahkan ke halaman utama
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Tunggu hingga token ID siap untuk mendapatkan peran
+    const idTokenResult = await user.getIdTokenResult(true); // 'true' untuk memaksa refresh token
+    const role = idTokenResult.claims.role;
+    // Arahkan semua pengguna ke dashboard setelah login berhasil
     window.location.href = 'dashboard.html';
+
   } catch (error) {
     // Jika gagal, tampilkan pesan error
     console.error("Login Gagal:", error.code);

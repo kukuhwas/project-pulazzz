@@ -68,3 +68,42 @@
     border-color: #dc3545;
     color: #dc3545;
 }
+
+/* --- Gaya Kustom untuk Kartu Dashboard --- */
+.dashboard-card .card-body {
+    font-size: 0.9rem; /* Perkecil font default di body kartu */
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+.dashboard-card .card-body p {
+    margin-bottom: 0.25rem; /* Kurangi jarak antar paragraf */
+}
+
+.dashboard-card .order-summary-list {
+    font-size: 0.85rem; /* Perkecil font khusus untuk ringkasan item */
+    padding-left: 0; /* Atur padding kiri untuk list */
+    margin-top: 0.5rem;
+    margin-bottom: 0; /* Hilangkan margin bawah dari list */
+}
+
+/* Gaya untuk tombol aksi yang dinonaktifkan */
+.action-btn.is-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Gaya untuk Full Page Loader */
+#full-page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}

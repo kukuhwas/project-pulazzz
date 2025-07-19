@@ -31,58 +31,66 @@
             <div id="confirmation-header" class="card-header text-white">
                 <h4 class="my-0" id="confirmation-title">Memuat...</h4>
             </div>
-            <div class="card-body p-4">
-                <div class="row mb-4">
-                    <div class="col-sm-6">
-                        <h5 class="mb-3">Detail Pelanggan:</h5>
-                        <p class="mb-1"><strong>Nama:</strong> <span id="customer-name">-</span></p>
-                        <p class="mb-1"><strong>No. HP:</strong> <span id="customer-phone">-</span></p>
-                    </div>
-                    <div class="col-sm-6 text-sm-end">
-                        <h5 class="mb-3">No. Pesanan:</h5>
-                        <h4 class="mb-1"><span class="badge bg-secondary" id="order-display-id">Memuat...</span></h4>
-                        <p class="mb-1"><strong>Tanggal:</strong> <span id="order-date">-</span></p>
-                        <p class="mb-1"><strong>Dibuat Oleh:</strong> <span id="creator-email">-</span></p>
-
-                    </div>
+            <div id="details-loading-indicator" class="card-body text-center p-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
-
-                <h5 class="mb-3">Rincian Produk:</h5>
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead>
-                            <tr>
-                                <th scope="col">Produk</th>
-                                <th scope="col">Ukuran</th>
-                                <th scope="col" class="text-center">Qty</th>
-                                <th scope="col" class="text-end">Subtotal</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="item-list">
-                        </tbody>
-
-                        <tfoot>
-                            <tr>
-                                <td colspan="3" class="text-end border-0"><strong>Total Pembayaran:</strong></td>
-                                <td class="text-end border-0"><strong class="h5" id="total-amount">Rp 0</strong></td>
-                            </tr>
-                        </tfoot>
-
-                    </table>
-
-                </div>
-
-                <hr class="my-4">
-
-                <h5 class="mb-3">Alamat Pengiriman:</h5>
-                <p id="shipping-address" class="text-muted">-</p>
+                <p class="mt-2">Memuat detail pesanan...</p>
             </div>
-            <div class="card-footer text-center no-print p-3">
-                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                    <button class="btn btn-primary" id="print-btn">🖨️ Cetak / Simpan PDF</button>
-                    <button class="btn btn-success d-none" id="send-email-btn" disabled>📧 Kirim Email Produksi</button>
-                    <a href="index.html" class="btn btn-secondary">Buat Pesanan Baru</a>
+            <div id="details-content-wrapper" class="d-none">
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-sm-6">
+                            <h5 class="mb-3">Detail Pelanggan:</h5>
+                            <p class="mb-1"><strong>Nama:</strong> <span id="customer-name">-</span></p>
+                            <p class="mb-1"><strong>No. HP:</strong> <span id="customer-phone">-</span></p>
+                        </div>
+                        <div class="col-sm-6 text-sm-end">
+                            <h5 class="mb-3">No. Pesanan:</h5>
+                            <h4 class="mb-1"><span class="badge bg-secondary" id="order-display-id">Memuat...</span></h4>
+                            <p class="mb-1"><strong>Tanggal:</strong> <span id="order-date">-</span></p>
+                            <p class="mb-1"><strong>Dibuat Oleh:</strong> <span id="creator-email">-</span></p>
+
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3">Rincian Produk:</h5>
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Produk</th>
+                                    <th scope="col">Ukuran</th>
+                                    <th scope="col" class="text-center">Qty</th>
+                                    <th scope="col" class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="item-list">
+                            </tbody>
+
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end border-0"><strong>Total Pembayaran:</strong></td>
+                                    <td class="text-end border-0"><strong class="h5" id="total-amount">Rp 0</strong></td>
+                                </tr>
+                            </tfoot>
+
+                        </table>
+
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="mb-3">Alamat Pengiriman:</h5>
+                    <p id="shipping-address" class="text-muted">-</p>
+                </div>
+                <div class="card-footer text-center no-print p-3">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <button class="btn btn-primary" id="print-btn">🖨️ Cetak / Simpan PDF</button>
+                        <button class="btn btn-success d-none" id="send-email-btn" disabled>📧 Kirim Email Produksi</button>
+                        <a href="index.html" class="btn btn-secondary">Buat Pesanan Baru</a>
+                    </div>
                 </div>
             </div>
         </div>
