@@ -1,0 +1,21 @@
+# Dependencies & installed packages
+node_modules/
+functions/node_modules/
+
+# Firebase hosting and functions cache/logs
+.firebase/
+firebase-debug.log*
+*.log
+
+# Secret files (Do not commit these!)
+service-account-key.json
+functions/service-account-key.json
+
+# macOS system files
+.DS_Store
+
+
+
+
+
+
