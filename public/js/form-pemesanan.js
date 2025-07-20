@@ -6,83 +6,105 @@ import { httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebas
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- Referensi Elemen & State ---
     const orderForm = document.getElementById('order-form');
     const customerPhoneInput = document.getElementById('customer-phone');
-    const provinceSelect = document.getElementById('address-province');
-    const citySelect = document.getElementById('address-city');
-    const districtSelect = document.getElementById('address-district');
+    const fullPageLoader = document.getElementById('full-page-loader');
+    const addressSearchSelect = document.getElementById('address-search');
+    const hiddenProvinceInput = document.getElementById('address-province');
+    const hiddenCityInput = document.getElementById('address-city');
+    const hiddenDistrictInput = document.getElementById('address-district');
     const productDetailsWrapper = document.getElementById('product-details-wrapper');
     const productListTbody = document.getElementById('product-list');
     const productSizeSelect = document.getElementById('product-size');
     const productQtyInput = document.getElementById('product-qty');
     const addProductBtn = document.getElementById('add-product-btn');
     const validationModal = new bootstrap.Modal(document.getElementById('validationModal'));
-    const fullPageLoader = document.getElementById('full-page-loader');
 
     let cartItems = [];
 
-    // --- FUNGSI HELPER BARU UNTUK VALIDASI HP DI FRONTEND ---
-    function formatAndValidatePhone(inputElement) {
-        let value = inputElement.value.replace(/\D/g, ''); // Hapus non-digit
+    async function initializeAddressSearch() {
+        const tomSelect = new TomSelect(addressSearchSelect, {
+            valueField: 'id',
+            labelField: 'text',
+            searchField: 'text',
+            create: false,
+            placeholder: 'Ketik untuk mencari kecamatan...',
+            render: {
+                item: function (data, escape) {
+                    return `<div>${escape(data.district)}, ${escape(data.city)}, ${escape(data.province)}</div>`;
+                },
+                option: function (data, escape) {
+                    return `<div><strong class="d-block">${escape(data.district)}</strong><small class="text-muted">${escape(data.city)}, ${escape(data.province)}</small></div>`;
+                },
+            },
+            load: async (query, callback) => {
+                if (tomSelect.loading > 1) {
+                    return callback();
+                }
 
-        // Jika diawali 62, hapus untuk edit
-        if (value.startsWith('62')) {
-            value = value.substring(2);
-        }
-        // Jika diawali 0, hapus untuk edit
-        if (value.startsWith('0')) {
-            value = value.substring(1);
-        }
+                try {
+                    console.log("Memuat data alamat dari Firestore...");
+                    const [provincesSnap, citiesSnap, districtsSnap] = await Promise.all([
+                        getDocs(collection(db, "provinces")),
+                        getDocs(collection(db, "cities")),
+                        getDocs(collection(db, "districts"))
+                    ]);
 
-        inputElement.value = value; // Tampilkan nomor tanpa 0 atau 62 di depan
+                    const provinces = new Map(provincesSnap.docs.map(doc => [doc.id, doc.data().name]));
+                    const cities = new Map(citiesSnap.docs.map(doc => [doc.id, { name: doc.data().name, provinceId: doc.data().provinceId }]));
+
+                    const addressOptions = districtsSnap.docs.map(doc => {
+                        const district = doc.data();
+                        const city = cities.get(district.cityId);
+                        const province = provinces.get(city?.provinceId);
+                        const text = `${district.name}, ${city?.name || ''}, ${province || ''}`;
+                        return { id: doc.id, district: district.name, city: city?.name || '', province: province || '', text };
+                    });
+
+                    tomSelect.addOptions(addressOptions);
+                    callback(addressOptions);
+                    console.log("Data alamat berhasil dimuat.");
+
+                } catch (error) {
+                    console.error("Gagal memuat data alamat untuk pencarian:", error);
+                    callback([]);
+                }
+            }
+        });
+
+        tomSelect.on('change', (value) => {
+            const selectedData = tomSelect.options[value];
+            if (selectedData) {
+                hiddenProvinceInput.value = selectedData.province;
+                hiddenCityInput.value = selectedData.city;
+                hiddenDistrictInput.value = selectedData.district;
+                addressSearchSelect.setCustomValidity("");
+            } else {
+                hiddenProvinceInput.value = '';
+                hiddenCityInput.value = '';
+                hiddenDistrictInput.value = '';
+            }
+        });
     }
 
-    // --- Event Listener untuk formating nomor HP ---
+    initializeAddressSearch();
+
+    function formatAndValidatePhone(inputElement) {
+        let value = inputElement.value.replace(/\D/g, '');
+        if (value.startsWith('62')) { value = value.substring(2); }
+        if (value.startsWith('0')) { value = value.substring(1); }
+        inputElement.value = value;
+    }
+
     customerPhoneInput.addEventListener('input', (event) => {
-        // Hanya izinkan angka
         event.target.value = event.target.value.replace(/\D/g, '');
     });
 
     customerPhoneInput.addEventListener('blur', (event) => {
-        // Format saat pengguna selesai mengetik
         formatAndValidatePhone(event.target);
     });
 
-
-    // --- Logika Dropdown Alamat (TETAP SAMA) ---
-    async function populateDropdown(collectionName, selectElement, filterField, filterValue) {
-        selectElement.length = 1;
-        selectElement.disabled = true;
-        try {
-            let q = filterField && filterValue ?
-                query(collection(db, collectionName), where(filterField, "==", filterValue)) :
-                query(collection(db, collectionName));
-
-            const querySnapshot = await getDocs(q);
-            querySnapshot.forEach((doc) => {
-                selectElement.add(new Option(doc.data().name, doc.id));
-            });
-            if (!querySnapshot.empty) {
-                selectElement.disabled = false;
-            }
-        } catch (error) {
-            console.error(`Gagal memuat data ${collectionName}: `, error);
-        }
-    }
-
-    populateDropdown('provinces', provinceSelect);
-    provinceSelect.addEventListener('change', (e) => {
-        citySelect.length = 1; citySelect.disabled = true;
-        districtSelect.length = 1; districtSelect.disabled = true;
-        if (e.target.value) populateDropdown('cities', citySelect, 'provinceId', e.target.value);
-    });
-    citySelect.addEventListener('change', (e) => {
-        districtSelect.length = 1; districtSelect.disabled = true;
-        if (e.target.value) populateDropdown('districts', districtSelect, 'cityId', e.target.value);
-    });
-
-    // --- Logika Keranjang Belanja (TETAP SAMA) ---
+    // --- LOGIKA KERANJANG BELANJA (YANG HILANG SEBELUMNYA) ---
     function renderProductInTable(item) {
         const rowId = `row-${item.productId}`;
         const existingRow = document.getElementById(rowId);
@@ -114,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const quantity = parseInt(productQtyInput.value);
 
         if (!type || !size || !quantity || quantity < 1) {
-            alert('Harap pilih Jenis Produk, Ukuran, dan Jumlah yang valid.');
+            Swal.fire('Data Tidak Lengkap', 'Harap pilih Jenis Produk, Ukuran, dan Jumlah yang valid.', 'warning');
             return;
         }
 
@@ -125,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const productRef = doc(db, "products", productId);
             const productSnap = await getDoc(productRef);
             if (!productSnap.exists()) {
-                alert('Produk tidak ditemukan di database.');
+                Swal.fire('Error', 'Produk tidak ditemukan di database.', 'error');
                 return;
             }
 
@@ -150,17 +172,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error("Error saat menambahkan produk: ", error);
-            alert("Gagal menambahkan produk. Cek console untuk detail.");
+            Swal.fire('Error', 'Gagal menambahkan produk. Cek konsol untuk detail.', 'error');
         }
     });
 
-    // --- LOGIKA SUBMIT FORM (DIPERBARUI) ---
+    // --- LOGIKA SUBMIT FORM ---
     orderForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         event.stopPropagation();
 
-        if (!orderForm.checkValidity()) {
+        if (!orderForm.checkValidity() || !addressSearchSelect.value) {
             orderForm.classList.add('was-validated');
+            if (!addressSearchSelect.value) {
+                document.querySelector('.ts-control').classList.add('is-invalid');
+            }
             validationModal.show();
             return;
         }
@@ -176,35 +201,27 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // --- PERBAIKAN: VALIDASI PANJANG NOMOR HP DI FRONTEND ---
         const phoneValue = document.getElementById('customer-phone').value;
         const fullPhone = `62${phoneValue}`;
         if (fullPhone.length < 11 || fullPhone.length > 15) {
-            Swal.fire('Error', 'Panjang nomor telepon tidak valid.', 'error');
+            Swal.fire('Error', 'Panjang nomor telepon tidak valid. Pastikan antara 9-13 digit setelah +62.', 'error');
             return;
         }
-        // --- AKHIR PERBAIKAN ---
-
 
         fullPageLoader.classList.remove('d-none');
 
         try {
-            // Gabungkan +62 dengan input pengguna
-            const customerPhone = `62${document.getElementById('customer-phone').value}`;
-
-            // Siapkan data untuk dikirim ke Cloud Function
             const payload = {
                 customerInfo: {
                     name: document.getElementById('customer-name').value,
-                    phone: customerPhone,
+                    phone: phoneValue,
                 },
                 shippingAddress: {
                     fullAddress: document.getElementById('address-street').value,
-                    province: provinceSelect.options[provinceSelect.selectedIndex].text,
-                    city: citySelect.options[citySelect.selectedIndex].text,
-                    district: districtSelect.options[districtSelect.selectedIndex].text,
+                    province: hiddenProvinceInput.value,
+                    city: hiddenCityInput.value,
+                    district: hiddenDistrictInput.value,
                 },
-                // PERBAIKAN DI SINI: Sertakan semua data item yang relevan
                 items: cartItems.map(item => ({
                     productType: item.productType,
                     size: item.size,
@@ -215,11 +232,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').nextElementSibling.textContent.trim(),
             };
 
-            // Panggil Cloud Function
             const createOrder = httpsCallable(functions, 'createOrderAndProfile');
             const result = await createOrder(payload);
 
-            // Arahkan ke halaman konfirmasi dengan ID pesanan dari hasil function
             window.location.href = `konfirmasi.html?order_id=${result.data.orderId}&new=true`;
 
         } catch (error) {

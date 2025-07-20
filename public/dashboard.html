@@ -11,20 +11,7 @@
 
 <body>
 
-    <header>
-        <nav class="navbar navbar-dark header-bg">
-            <div class="container d-flex justify-content-between align-items-center">
-                <a class="navbar-brand d-flex align-items-center" href="index.html">
-                    <img src="assets/logo-pulazzz-putih.png" alt="Logo Pulazzz" class="header-logo me-2">
-                    <span class="d-none d-sm-inline">Sistem Order Pulazzz</span>
-                </a>
-                <div class="d-flex align-items-center">
-                    <a href="dashboard.html" class="btn btn-outline-light btn-sm me-3 active">Dashboard</a>
-                    <button class="btn btn-danger btn-sm" id="logout-btn">Logout</button>
-                </div>
-            </div>
-        </nav>
-    </header>
+    <header id="main-header"></header>
 
     <main class="container mt-5 main-container-limited">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
@@ -71,16 +58,19 @@
                     </div>
                     <div class="modal-body">
                         <p>Untuk mengonfirmasi perubahan status pesanan <strong id="modal-order-id"></strong> menjadi
-                            <strong id="modal-next-status"></strong>, silakan ketik ulang nomor pesanan di bawah ini.</p>
+                            <strong id="modal-next-status"></strong>, silakan ketik ulang nomor pesanan di bawah ini.
+                        </p>
                         <div class="mb-3">
-                            <input type="text" class="form-control" id="modal-confirm-input" placeholder="Ketik nomor pesanan di sini...">
+                            <input type="text" class="form-control" id="modal-confirm-input"
+                                placeholder="Ketik nomor pesanan di sini...">
                             <div class="form-text">Tombol "Ya, Ubah Status" akan aktif jika nomor pesanan sesuai.</div>
                         </div>
                         <p class="text-muted small mt-2">Tindakan ini tidak dapat dibatalkan.</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="button" class="btn btn-primary" id="confirm-status-change-btn" disabled>Ya, Ubah Status</button>
+                        <button type="button" class="btn btn-primary" id="confirm-status-change-btn" disabled>Ya, Ubah
+                            Status</button>
                     </div>
                 </div>
             </div>
@@ -93,6 +83,8 @@
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/auth-guard.js"></script>
     <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/navigation.js"></script>
+
 
 </body>
 
