@@ -1,0 +1,72 @@
+[
+  {
+    "id": "comfort_series_100200",
+    "name": "Pulazzz Comfort Series 100x200",
+    "price": 1700000,
+    "size": "100x200",
+    "type": "Comfort Series"
+  },
+  {
+    "id": "comfort_series_120200",
+    "name": "Pulazzz Comfort Series 120x200",
+    "price": 2000000,
+    "size": "120x200",
+    "type": "Comfort Series"
+  },
+  {
+    "id": "comfort_series_145200",
+    "name": "Pulazzz Comfort Series 145x200",
+    "price": 2200000,
+    "size": "145x200",
+    "type": "Comfort Series"
+  },
+  {
+    "id": "comfort_series_180200",
+    "price": 2500000,
+    "type": "Comfort Series",
+    "size": "180x200",
+    "name": "Pulazzz Comfort Series 180x200"
+  },
+  {
+    "id": "comfort_series_90200",
+    "name": "Pulazzz Comfort Series 90x200",
+    "price": 1500000,
+    "size": "90x200",
+    "type": "Comfort Series"
+  },
+  {
+    "id": "ortho_series_100200",
+    "name": "Pulazzz Ortho Series 100x200",
+    "price": 1700000,
+    "size": "100x200",
+    "type": "Ortho Series"
+  },
+  {
+    "id": "ortho_series_120200",
+    "name": "Pulazzz Ortho Series 120x200",
+    "price": 1800000,
+    "size": "120x200",
+    "type": "Ortho Series"
+  },
+  {
+    "id": "ortho_series_145200",
+    "name": "Pulazzz Ortho Series 145x200",
+    "price": 2200000,
+    "size": "145x200",
+    "type": "Ortho Series"
+  },
+  {
+    "id": "ortho_series_180200",
+    "name": "Pulazzz Ortho Series 180x200",
+    "price": 2500000,
+    "size": "180x200",
+    "type": "Ortho Series"
+  },
+  {
+    "id": "ortho_series_90200",
+    "name": "Pulazzz Ortho Series 90x200",
+    "price": 1500000,
+    "size": "90x200",
+    "type": "Ortho Series"
+  }
+]

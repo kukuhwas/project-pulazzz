@@ -1,0 +1,1460 @@
+[
+  {
+    "id": "1TBnx1ysVa4HZQ8cSQQs",
+    "creator": {
+      "uid": "YHzjDxjWSuNP6N8ThTvx5DL2BoH2",
+      "email": "halo.pulazzz@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Jajjw",
+      "phone": "6208112650168"
+    },
+    "shippingAddress": {
+      "fullAddress": "Hshjs",
+      "province": "BENGKULU",
+      "city": "KABUPATEN BENGKULU TENGAH",
+      "district": "PEMATANG TIGA",
+      "village": "ATURAN MUMPO II"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Cash on Delivery (COD)",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752897132,
+      "_nanoseconds": 795000000
+    },
+    "displayId": "PO-250719-006"
+  },
+  {
+    "id": "4to701a0SIdpOGrTmTbH",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskitho",
+      "phone": "622254"
+    },
+    "shippingAddress": {
+      "fullAddress": "Jl. Semeru IV no 23\nTegalharjo Jebres",
+      "province": "Jawa Tengah",
+      "city": "Kabupaten Wonogiri",
+      "district": "Slogohimo"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_145200",
+        "productType": "Comfort Series",
+        "size": "145x200",
+        "quantity": 1,
+        "priceAtPurchase": 2200000,
+        "subtotal": 2200000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 2200000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752916716,
+      "_nanoseconds": 276000000
+    },
+    "displayId": "PO-250719-014"
+  },
+  {
+    "id": "6LHzAgBMuLrJwPhz3QE9",
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "62"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752800398,
+      "_nanoseconds": 810000000
+    },
+    "displayId": "PO-250718-002"
+  },
+  {
+    "id": "8ePC10jTkZxwRcTgHgHT",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskitho",
+      "phone": "62234"
+    },
+    "shippingAddress": {
+      "fullAddress": "Jl. Semeru IV no 23\nTegalharjo Jebres",
+      "province": "Jawa Tengah",
+      "city": "Kabupaten Cilacap",
+      "district": "Dayeuhluhur"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_90200",
+        "productType": "Ortho Series",
+        "size": "90x200",
+        "quantity": 1,
+        "priceAtPurchase": 1500000,
+        "subtotal": 1500000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1500000,
+    "status": "new_order",
+    "representativeId": null,
+    "createdAt": {
+      "_seconds": 1752947494,
+      "_nanoseconds": 582000000
+    },
+    "displayId": "PO-250720-002"
+  },
+  {
+    "id": "8o4H3r8KdUzhWFkuWGAN",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "6223423"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752876985,
+      "_nanoseconds": 485000000
+    },
+    "displayId": "PO-250718-011"
+  },
+  {
+    "id": "9mFFjtFAalpFJSEPhaxm",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "62234"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_180200",
+        "productType": "Comfort Series",
+        "size": "180x200",
+        "quantity": 1,
+        "priceAtPurchase": 2500000,
+        "subtotal": 2500000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 2500000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752880276,
+      "_nanoseconds": 903000000
+    },
+    "displayId": "PO-250718-018"
+  },
+  {
+    "id": "BtuD3umvHdo9J8ltHnZI",
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "628112650168"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_180200",
+        "productType": "Comfort Series",
+        "size": "180x200",
+        "quantity": 1,
+        "priceAtPurchase": 2500000,
+        "subtotal": 2500000
+      },
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 4300000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752794414,
+      "_nanoseconds": 590000000
+    }
+  },
+  {
+    "id": "CXqwffZyTGTQwWnC3C5f",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "sdfsdg",
+      "phone": "6232425"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "JAWA TENGAH",
+      "city": "KABUPATEN CILACAP",
+      "district": "WANAREJA",
+      "village": "CILONGKRANG"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752894017,
+      "_nanoseconds": 311000000
+    },
+    "displayId": "PO-250719-002"
+  },
+  {
+    "id": "FNcsAXtqdMgHRRtr41sm",
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "62sdsdg"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752801254,
+      "_nanoseconds": 288000000
+    },
+    "displayId": "PO-250718-005"
+  },
+  {
+    "id": "G2htuCjVKzoJ14WQ6s8s",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "622534366"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "createdAt": {
+      "_seconds": 1752874700,
+      "_nanoseconds": 34000000
+    },
+    "displayId": "PO-250718-009",
+    "status": "completed"
+  },
+  {
+    "id": "H8Hwd7VuDn1KtpBwgT8w",
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "62234234"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_180200",
+        "productType": "Comfort Series",
+        "size": "180x200",
+        "quantity": 1,
+        "priceAtPurchase": 2500000,
+        "subtotal": 2500000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 2500000,
+    "createdAt": {
+      "_seconds": 1752803730,
+      "_nanoseconds": 313000000
+    },
+    "displayId": "PO-250718-007",
+    "status": "cancelled"
+  },
+  {
+    "id": "IV3qa3ChqG6RiSb9O3AN",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukahiasfh",
+      "phone": "628112650168"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_180200",
+        "productType": "Comfort Series",
+        "size": "180x200",
+        "quantity": 1,
+        "priceAtPurchase": 2500000,
+        "subtotal": 2500000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 2500000,
+    "createdAt": {
+      "_seconds": 1752877237,
+      "_nanoseconds": 509000000
+    },
+    "displayId": "PO-250718-013",
+    "status": "in_production"
+  },
+  {
+    "id": "N2Z8jMNYFeEBZZ1opxoZ",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "sdfds",
+      "phone": "62234"
+    },
+    "shippingAddress": {
+      "fullAddress": "23sd",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752879887,
+      "_nanoseconds": 949000000
+    },
+    "displayId": "PO-250718-016"
+  },
+  {
+    "id": "NCxRifDiEBhvpr4vq5Md",
+    "creator": {
+      "uid": "YHzjDxjWSuNP6N8ThTvx5DL2BoH2",
+      "email": "halo.pulazzz@gmail.com"
+    },
+    "customerInfo": {
+      "name": "sfsdfsdg",
+      "phone": "62234235"
+    },
+    "shippingAddress": {
+      "fullAddress": "sdsgds",
+      "province": "SUMATERA UTARA",
+      "city": "KABUPATEN MANDAILING NATAL",
+      "district": "SINUNUKAN",
+      "village": "SINUNUKAN III"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752897096,
+      "_nanoseconds": 330000000
+    },
+    "displayId": "PO-250719-005"
+  },
+  {
+    "id": "OwUQAujkVDckNPE3ftwa",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Jsjja",
+      "phone": "6254581"
+    },
+    "shippingAddress": {
+      "fullAddress": "Habsbab",
+      "province": "Bengkulu",
+      "city": "Kabupaten Lebong",
+      "district": "Uram Jaya"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "createdAt": {
+      "_seconds": 1752906958,
+      "_nanoseconds": 844000000
+    },
+    "displayId": "PO-250719-010",
+    "status": "completed"
+  },
+  {
+    "id": "QbHwuHJoC60i6tgLpFVz",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "wdfsd",
+      "phone": "622342"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752879232,
+      "_nanoseconds": 749000000
+    },
+    "displayId": "PO-250718-014"
+  },
+  {
+    "id": "RuCIdrF7hJTH16YY1f4b",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "622554"
+    },
+    "shippingAddress": {
+      "fullAddress": "Usjnwb",
+      "province": "Bengkulu",
+      "city": "Kabupaten Seluma",
+      "district": "Air Periukan"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_180200",
+        "productType": "Comfort Series",
+        "size": "180x200",
+        "quantity": 9,
+        "priceAtPurchase": 2500000,
+        "subtotal": 22500000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 22500000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752914670,
+      "_nanoseconds": 334000000
+    },
+    "displayId": "PO-250719-012"
+  },
+  {
+    "id": "S3u1k9Uy5YDH2ayAHUgs",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "sfdsggg",
+      "phone": "6223324"
+    },
+    "shippingAddress": {
+      "fullAddress": "sdgsg",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752880096,
+      "_nanoseconds": 641000000
+    },
+    "displayId": "PO-250718-017"
+  },
+  {
+    "id": "TC5hUMkpQCMvL3PgCwei",
+    "customerInfo": {
+      "name": "Ijsjif",
+      "phone": "62as14"
+    },
+    "shippingAddress": {
+      "fullAddress": "sdfsdg",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752799246,
+      "_nanoseconds": 389000000
+    },
+    "displayId": "PO-250718-001"
+  },
+  {
+    "id": "TlITGw8aBzZ2RNFc4D8J",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "62234235"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "createdAt": {
+      "_seconds": 1752881007,
+      "_nanoseconds": 898000000
+    },
+    "displayId": "PO-250719-001",
+    "status": "in_production"
+  },
+  {
+    "id": "UDtl8P5yPXNtnxwVm4FN",
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "628112650168"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752800841,
+      "_nanoseconds": 915000000
+    },
+    "displayId": "PO-250718-004"
+  },
+  {
+    "id": "UhItGH6rrS8ZFCs3TERB",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "6208112650168"
+    },
+    "shippingAddress": {
+      "fullAddress": "Hshha",
+      "province": "Riau",
+      "city": "Kabupaten Kampar",
+      "district": "Tapung Hilir"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_180200",
+        "productType": "Comfort Series",
+        "size": "180x200",
+        "quantity": 2,
+        "priceAtPurchase": 2500000,
+        "subtotal": 5000000
+      },
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 6800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752914540,
+      "_nanoseconds": 762000000
+    },
+    "displayId": "PO-250719-011"
+  },
+  {
+    "id": "V0HdaIjy4y7DXlJZBBMT",
+    "creator": {
+      "uid": "YHzjDxjWSuNP6N8ThTvx5DL2BoH2",
+      "email": "halo.pulazzz@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Jejje",
+      "phone": "6208112650168"
+    },
+    "shippingAddress": {
+      "fullAddress": "Hshjs",
+      "province": "BENGKULU",
+      "city": "KABUPATEN MUKOMUKO",
+      "district": "LUBUK PINANG",
+      "village": "RANAH KARYA"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "createdAt": {
+      "_seconds": 1752898422,
+      "_nanoseconds": 401000000
+    },
+    "displayId": "PO-250719-007",
+    "status": "in_production"
+  },
+  {
+    "id": "VgVFTB98syccYzKF6aae",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "wf",
+      "phone": "62234"
+    },
+    "shippingAddress": {
+      "fullAddress": "assf",
+      "province": "Sumatera Utara",
+      "city": "Kabupaten Nias",
+      "district": "Ulugawo"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_90200",
+        "productType": "Comfort Series",
+        "size": "90x200",
+        "quantity": 1,
+        "priceAtPurchase": 1500000,
+        "subtotal": 1500000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1500000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752917475,
+      "_nanoseconds": 944000000
+    },
+    "displayId": "PO-250719-015"
+  },
+  {
+    "id": "WQKcLSTSnFhjdPovZWx7",
+    "creator": {
+      "uid": "XGGW9brdEvhyoPTeOTQmVTOwR2z1",
+      "email": "irfanrotikinnar@gmail.com"
+    },
+    "customerInfo": {
+      "name": "irfan",
+      "phone": "6285729948971"
+    },
+    "shippingAddress": {
+      "fullAddress": "Green Village",
+      "province": "JAWA TENGAH",
+      "city": "KOTA SEMARANG",
+      "district": "GUNUNG PATI",
+      "village": "NGIJO"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_180200",
+        "productType": "Comfort Series",
+        "size": "180x200",
+        "quantity": 1,
+        "priceAtPurchase": 2500000,
+        "subtotal": 2500000
+      },
+      {
+        "productId": "comfort_series_180200",
+        "productType": "Comfort Series",
+        "size": "180x200",
+        "quantity": 1,
+        "priceAtPurchase": 2500000,
+        "subtotal": 2500000
+      }
+    ],
+    "paymentMethod": "Cash on Delivery (COD)",
+    "totalAmount": 5000000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752901575,
+      "_nanoseconds": 314000000
+    },
+    "displayId": "PO-250719-009"
+  },
+  {
+    "id": "YTsP6xUhWJZLWxOWbkeX",
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "62"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_180200",
+        "productType": "Comfort Series",
+        "size": "180x200",
+        "quantity": 1,
+        "priceAtPurchase": 2500000,
+        "subtotal": 2500000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 2500000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752800748,
+      "_nanoseconds": 207000000
+    },
+    "displayId": "PO-250718-003"
+  },
+  {
+    "id": "ZWr696Coewwka1XPDonn",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "622335"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "JAWA TENGAH",
+      "city": "KABUPATEN BANYUMAS",
+      "district": "WANGON",
+      "village": "RAWAHENG"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752894435,
+      "_nanoseconds": 666000000
+    },
+    "displayId": "PO-250719-003"
+  },
+  {
+    "id": "acv0uDxxCnTTwwNIVQRA",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "asdasd",
+      "phone": "621124124"
+    },
+    "shippingAddress": {
+      "fullAddress": "121412",
+      "province": "Sumatera Utara",
+      "city": "Kabupaten Mandailing Natal",
+      "district": "Sinunukan"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_100200",
+        "productType": "Comfort Series",
+        "size": "100x200",
+        "quantity": 2,
+        "priceAtPurchase": 1700000,
+        "subtotal": 3400000
+      }
+    ],
+    "paymentMethod": "Cash on Delivery (COD)",
+    "totalAmount": 3400000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752915989,
+      "_nanoseconds": 581000000
+    },
+    "displayId": "PO-250719-013"
+  },
+  {
+    "id": "edPT9gazMu1cDXEboZWW",
+    "creator": {
+      "uid": "YHzjDxjWSuNP6N8ThTvx5DL2BoH2",
+      "email": "halo.pulazzz@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Isijs",
+      "phone": "6225181"
+    },
+    "shippingAddress": {
+      "fullAddress": "Hdhhs",
+      "province": "BENGKULU",
+      "city": "KABUPATEN BENGKULU TENGAH",
+      "district": "BANG HAJI",
+      "village": "BANG HAJI"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752896720,
+      "_nanoseconds": 294000000
+    },
+    "displayId": "PO-250719-004"
+  },
+  {
+    "id": "g5ZpmRY4ZptPmyWrqBBs",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "hohih",
+      "phone": "628907"
+    },
+    "shippingAddress": {
+      "fullAddress": "gff",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752879445,
+      "_nanoseconds": 952000000
+    },
+    "displayId": "PO-250718-015"
+  },
+  {
+    "id": "gYr4gAEmMvs5nkN6FiFI",
+    "creator": {
+      "uid": "XGGW9brdEvhyoPTeOTQmVTOwR2z1",
+      "email": "irfanrotikinnar@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Hamdan",
+      "phone": "6287857585758"
+    },
+    "shippingAddress": {
+      "fullAddress": "Bantul",
+      "province": "Di Yogyakarta",
+      "city": "Kabupaten Bantul",
+      "district": "Bantul"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_180200",
+        "productType": "Ortho Series",
+        "size": "180x200",
+        "quantity": 1,
+        "priceAtPurchase": 2500000,
+        "subtotal": 2500000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 2500000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752922051,
+      "_nanoseconds": 894000000
+    },
+    "displayId": "PO-250719-016"
+  },
+  {
+    "id": "huaESo1EMUShpcyhjVSt",
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "62fgdfdfh"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752802867,
+      "_nanoseconds": 23000000
+    },
+    "displayId": "PO-250718-006"
+  },
+  {
+    "id": "imFA0VIcoKYiOXJdTE2I",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "62345346"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Cash on Delivery (COD)",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752876386,
+      "_nanoseconds": 697000000
+    },
+    "displayId": "PO-250718-010"
+  },
+  {
+    "id": "krXQJnCcXbSyhs2tORgO",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "6232432"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752877172,
+      "_nanoseconds": 339000000
+    },
+    "displayId": "PO-250718-012"
+  },
+  {
+    "id": "muk5ryoixjC70QeAZMf5",
+    "creator": {
+      "uid": "XGGW9brdEvhyoPTeOTQmVTOwR2z1",
+      "email": "irfanrotikinnar@gmail.com"
+    },
+    "customerInfo": {
+      "name": "irfan zakariya",
+      "phone": "6285729948971"
+    },
+    "shippingAddress": {
+      "fullAddress": "Green Village",
+      "province": "Jawa Tengah",
+      "city": "Kota Semarang",
+      "district": "Gunung Pati"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_180200",
+        "productType": "Ortho Series",
+        "size": "180x200",
+        "quantity": 1,
+        "priceAtPurchase": 2500000,
+        "subtotal": 2500000
+      }
+    ],
+    "paymentMethod": "Cash on Delivery (COD)",
+    "totalAmount": 2500000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752974643,
+      "_nanoseconds": 776000000
+    },
+    "displayId": "PO-250720-003"
+  },
+  {
+    "id": "oqyWuYpINhiHNlfiqfUA",
+    "creator": {
+      "uid": "XGGW9brdEvhyoPTeOTQmVTOwR2z1",
+      "email": "irfanrotikinnar@gmail.com"
+    },
+    "customerInfo": {
+      "name": "ddd",
+      "phone": "6281575751717"
+    },
+    "shippingAddress": {
+      "fullAddress": "Gang",
+      "province": "SUMATERA BARAT",
+      "city": "KABUPATEN AGAM",
+      "district": "IV KOTO",
+      "village": "KOTO PANJANG"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Cash on Delivery (COD)",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752901304,
+      "_nanoseconds": 29000000
+    },
+    "displayId": "PO-250719-008"
+  },
+  {
+    "id": "oxC8XdVthxJq1vB6564l",
+    "creator": {
+      "uid": "YHzjDxjWSuNP6N8ThTvx5DL2BoH2",
+      "email": "halo.pulazzz@gmail.com"
+    },
+    "customerInfo": {
+      "name": "sdfsdf",
+      "phone": "62234234"
+    },
+    "shippingAddress": {
+      "fullAddress": "halo.pulazz",
+      "province": "Banten",
+      "city": "Kabupaten Tangerang",
+      "district": "Tigaraksa"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_100200",
+        "productType": "Ortho Series",
+        "size": "100x200",
+        "quantity": 1,
+        "priceAtPurchase": 1700000,
+        "subtotal": 1700000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1700000,
+    "representativeId": "1r0StbS5G2d7IwxVdID4p9MhxYC3",
+    "createdAt": {
+      "_seconds": 1752943061,
+      "_nanoseconds": 121000000
+    },
+    "displayId": "PO-250719-018",
+    "status": "shipped"
+  },
+  {
+    "id": "rcfXv1LKL47zBatafOOQ",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "620903904"
+    },
+    "shippingAddress": {
+      "fullAddress": "Mertodranan\nRt 03 Rw 03",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752812018,
+      "_nanoseconds": 564000000
+    },
+    "displayId": "PO-250718-008"
+  },
+  {
+    "id": "tO8EVsCFIaSoSfnDlz7A",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskitho",
+      "phone": "628112650168"
+    },
+    "shippingAddress": {
+      "fullAddress": "Jl. Semeru IV no 23\nTegalharjo Jebres",
+      "province": "Jawa Tengah",
+      "city": "Kabupaten Cilacap",
+      "district": "Wanareja"
+    },
+    "items": [
+      {
+        "productId": "comfort_series_90200",
+        "productType": "Comfort Series",
+        "size": "90x200",
+        "quantity": 1,
+        "priceAtPurchase": 1500000,
+        "subtotal": 1500000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1500000,
+    "createdAt": {
+      "_seconds": 1752938061,
+      "_nanoseconds": 274000000
+    },
+    "displayId": "PO-250719-017",
+    "status": "in_production"
+  },
+  {
+    "id": "z0xEKHj4u99Evy8qHuJj",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskito",
+      "phone": "62234234"
+    },
+    "shippingAddress": {
+      "fullAddress": "32sdfsd",
+      "province": "Jawa Tengah",
+      "city": "Kota Surakarta",
+      "district": "Laweyan",
+      "village": "Sriwedari"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_120200",
+        "productType": "Ortho Series",
+        "size": "120x200",
+        "quantity": 1,
+        "priceAtPurchase": 1800000,
+        "subtotal": 1800000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1800000,
+    "status": "new_order",
+    "createdAt": {
+      "_seconds": 1752880364,
+      "_nanoseconds": 738000000
+    },
+    "displayId": "PO-250718-019"
+  },
+  {
+    "id": "zMXPp0bBqYqkCvZRnctu",
+    "creator": {
+      "uid": "xSS2muIY1QXsT9OMI9ILsgN1Dvz1",
+      "email": "nina.waskito@gmail.com"
+    },
+    "customerInfo": {
+      "name": "Kukuh Waskitho",
+      "phone": "623345345"
+    },
+    "shippingAddress": {
+      "fullAddress": "Jl. Semeru IV no 23\nTegalharjo Jebres",
+      "province": "Jawa Tengah",
+      "city": "Kabupaten Purbalingga",
+      "district": "Kemangkon"
+    },
+    "items": [
+      {
+        "productId": "ortho_series_90200",
+        "productType": "Ortho Series",
+        "size": "90x200",
+        "quantity": 1,
+        "priceAtPurchase": 1500000,
+        "subtotal": 1500000
+      }
+    ],
+    "paymentMethod": "Transfer Bank",
+    "totalAmount": 1500000,
+    "status": "new_order",
+    "representativeId": null,
+    "createdAt": {
+      "_seconds": 1752947055,
+      "_nanoseconds": 493000000
+    },
+    "displayId": "PO-250720-001"
+  }
+]

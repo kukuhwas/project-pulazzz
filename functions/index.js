@@ -1,36 +1,30 @@
-/**
- * Ringkasan Perubahan:
- * 1. MENGGANTI PUPPETEER: Fungsi `generateInvoicePdf` kini menggunakan 'pdfmake' dan 'html-to-pdfmake' yang jauh lebih ringan dan cepat.
- * 2. EFISIENSI: Menghapus opsi 'memory' dan 'timeoutSeconds' dari fungsi PDF karena tidak lagi diperlukan, sehingga menghemat biaya dan sumber daya.
- * 3. KONFIGURASI FONT: Menambahkan konfigurasi font untuk 'pdfmake'. Anda perlu menyediakan file font (misalnya Roboto) di dalam folder proyek Anda agar PDF dapat dibuat dengan benar.
- * 4. PEMBERSIHAN KODE: Menghapus fungsi `generateInvoiceHtml` yang sudah tidak relevan dan menghapus `require('puppeteer')`.
- */
+// functions/index.js
 
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
+const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
 
-// Library baru untuk membuat PDF
+// Library lain
 const pdfmake = require('pdfmake');
 const htmlToPdfmake = require('html-to-pdfmake');
-
-// Inisialisasi Firebase Admin SDK
-admin.initializeApp();
-const db = admin.firestore();
-
-// SendGrid
+const { JSDOM } = require('jsdom');
 const sgMail = require('@sendgrid/mail');
-// Impor konfigurasi
 const config = require('./config.js');
-// Modul untuk membaca file dan path
 const fs = require('fs');
 const path = require('path');
+const logoBase64 = require('./logo.js');
+const getInvoiceDocDefinition = require('./pdf-template.js'); // Impor template PDF
+
+// Inisialisasi Firebase
+admin.initializeApp();
+const db = getFirestore();
 
 // --- FUNGSI 1: MEMBUAT DISPLAY ID ---
 exports.generateDisplayId = onDocumentCreated({ region: 'asia-southeast2', document: "orders/{orderId}" }, async (event) => {
   const orderRef = event.data.ref;
   const now = new Date();
-  const timeZone = 'Asia/Jakarta'; // GMT+7
+  const timeZone = 'Asia/Jakarta';
   const options = { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' };
   const formatter = new Intl.DateTimeFormat('sv-SE', options);
   const counterId = formatter.format(now);
@@ -53,7 +47,7 @@ exports.generateDisplayId = onDocumentCreated({ region: 'asia-southeast2', docum
     transaction.set(counterRef, { count: newCount });
     transaction.update(orderRef, {
       displayId: displayId,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
+      createdAt: FieldValue.serverTimestamp() 
     });
     
     console.log(`Generated displayId: ${displayId} for order: ${event.params.orderId}`);
@@ -114,52 +108,8 @@ exports.sendOrderEmail = onCall({ region: 'asia-southeast2', secrets: ["SENDGRID
   }
 });
 
-/**
- * Helper function to generate invoice HTML from order data.
- */
-function getInvoiceHtml(orderData) {
-  const invoiceTemplate = fs.readFileSync(path.join(__dirname, 'templates/invoice-template.html'), 'utf8');
-  let itemListHtml = '';
-  let grandTotal = 0;
-  orderData.items.forEach(item => {
-    const price = item.price || 50000; // <-- GANTI DENGAN HARGA ASLI DARI item.price
-    const subtotal = item.quantity * price;
-    grandTotal += subtotal;
-    
-    const formattedPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(price);
-    const formattedSubtotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(subtotal);
 
-    itemListHtml += `
-      <tr class="item">
-        <td>${item.productType} (${item.size})</td>
-        <td class="text-right">${item.quantity}</td>
-        <td class="text-right">${formattedPrice}</td>
-        <td class="text-right">${formattedSubtotal}</td>
-      </tr>
-    `;
-  });
-  
-  const formattedGrandTotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(grandTotal);
-  const orderTimestamp = orderData.createdAt || admin.firestore.Timestamp.now();
-  const orderDate = orderTimestamp.toDate().toLocaleDateString('id-ID', {
-    day: 'numeric', month: 'long', year: 'numeric'
-  });
-
-  const templateData = {
-    displayId: orderData.displayId || 'N/A',
-    orderDate: orderDate,
-    customerName: orderData.customerInfo.name,
-    customerPhone: orderData.customerInfo.phone,
-    shippingAddress: `${orderData.shippingAddress.fullAddress}, ${orderData.shippingAddress.district}, ${orderData.shippingAddress.city}`,
-    itemList: itemListHtml,
-    grandTotal: formattedGrandTotal
-  };
-
-  return populateTemplate(invoiceTemplate, templateData);
-}
-
-// --- FUNGSI BARU (DIPERBAIKI): MEMBUAT PDF INVOICE DENGAN PDFMAKE ---
-// PENTING: Buat folder 'fonts' di dalam folder 'functions', lalu letakkan file font Roboto (Roboto-Regular.ttf, dll.) di dalamnya.
+// --- FUNGSI PDF INVOICE ---
 const fonts = {
   Roboto: {
     normal: path.join(__dirname, 'fonts/Roboto-Regular.ttf'),
@@ -170,49 +120,43 @@ const fonts = {
 };
 
 exports.generateInvoicePdf = onCall({ region: 'asia-southeast2' }, async (request) => {
-  const orderId = request.data.orderId;
-  if (!orderId) {
-    throw new HttpsError('invalid-argument', 'Fungsi harus dipanggil dengan "orderId".');
-  }
-
-  try {
-    const orderDoc = await db.collection('orders').doc(orderId).get();
-    if (!orderDoc.exists) {
-      throw new HttpsError('not-found', 'Order tidak ditemukan.');
+    const orderId = request.data.orderId;
+    if (!orderId) {
+      throw new HttpsError('invalid-argument', 'Fungsi harus dipanggil dengan "orderId".');
     }
-    const orderData = orderDoc.data();
-    const htmlContent = getInvoiceHtml(orderData);
-
-    const docContent = htmlToPdfmake(htmlContent);
-    const printer = new pdfmake(fonts);
-
-    const docDefinition = {
-      content: docContent,
-      defaultStyle: { font: 'Roboto' }
-    };
-
-    const pdfDoc = printer.createPdfKitDocument(docDefinition);
-
-    // Bungkus proses pembuatan buffer PDF dalam sebuah Promise
-    const pdfBuffer = await new Promise((resolve, reject) => {
-        const chunks = [];
-        pdfDoc.on('data', chunk => chunks.push(chunk));
-        pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-        pdfDoc.on('error', reject);
-        pdfDoc.end();
-    });
-
-    return {
-      pdf: pdfBuffer.toString('base64'),
-      fileName: `Invoice-${orderData.displayId || orderId}.pdf`
-    };
-  } catch (error) {
-    console.error("Gagal membuat PDF invoice:", error);
-    throw new HttpsError('internal', 'Gagal membuat PDF invoice.', error);
-  }
+  
+    try {
+      const orderDoc = await db.collection('orders').doc(orderId).get();
+      if (!orderDoc.exists) {
+        throw new HttpsError('not-found', 'Order tidak ditemukan.');
+      }
+      const orderData = orderDoc.data();
+      
+      // Menggunakan fungsi yang diimpor dari file terpisah
+      const docDefinition = getInvoiceDocDefinition(orderData, logoBase64);
+      
+      const printer = new pdfmake(fonts);
+      const pdfDoc = printer.createPdfKitDocument(docDefinition);
+  
+      const pdfBuffer = await new Promise((resolve, reject) => {
+          const chunks = [];
+          pdfDoc.on('data', chunk => chunks.push(chunk));
+          pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
+          pdfDoc.on('error', reject);
+          pdfDoc.end();
+      });
+  
+      return {
+        pdf: pdfBuffer.toString('base64'),
+        fileName: `Invoice-${orderData.displayId || orderId}.pdf`
+      };
+    } catch (error) {
+      console.error("Gagal membuat PDF invoice:", error);
+      throw new HttpsError('internal', 'Gagal membuat PDF invoice.', error);
+    }
 });
 
-// --- FUNGSI 3: MENGATUR PERAN PENGGUNA ---
+// --- FUNGSI MANAJEMEN PENGGUNA ---
 exports.setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
   if (request.auth.token.role !== 'admin') {
     throw new HttpsError('permission-denied', 'Hanya admin yang bisa mengubah peran pengguna.');
@@ -235,7 +179,6 @@ exports.setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
   }
 });
 
-// --- FUNGSI 4: MENGAMBIL DAFTAR SEMUA PENGGUNA ---
 exports.listAllUsers = onCall({ region: 'asia-southeast2' }, async (request) => {
   if (request.auth.token.role !== 'admin') {
     throw new HttpsError('permission-denied', 'Hanya admin yang bisa melihat daftar pengguna.');
@@ -254,7 +197,6 @@ exports.listAllUsers = onCall({ region: 'asia-southeast2' }, async (request) => 
   }
 });
 
-// --- FUNGSI 5: MEMBUAT PENGGUNA BARU ---
 exports.createNewUser = onCall({ region: 'asia-southeast2' }, async (request) => {
   if (request.auth.token.role !== 'admin') {
     throw new HttpsError('permission-denied', 'Hanya admin yang bisa membuat pengguna baru.');
@@ -283,7 +225,6 @@ exports.createNewUser = onCall({ region: 'asia-southeast2' }, async (request) =>
   }
 });
 
-// --- FUNGSI 6: MENGIRIM LINK RESET PASSWORD ---
 exports.sendPasswordReset = onCall({
   region: 'asia-southeast2',
   secrets: ["SENDGRID_API_KEY"],
