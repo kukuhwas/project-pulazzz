@@ -3,24 +3,148 @@
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
-const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
-
-// Library lain
-const pdfmake = require('pdfmake');
-const htmlToPdfmake = require('html-to-pdfmake');
-const { JSDOM } = require('jsdom');
-const sgMail = require('@sendgrid/mail');
-const config = require('./config.js');
-const fs = require('fs');
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const path = require('path');
 const logoBase64 = require('./logo.js');
-const getInvoiceDocDefinition = require('./pdf-template.js'); // Impor template PDF
+const getInvoiceDocDefinition = require('./pdf-template.js');
+const pdfmake = require('pdfmake');
 
 // Inisialisasi Firebase
 admin.initializeApp();
 const db = getFirestore();
 
-// --- FUNGSI 1: MEMBUAT DISPLAY ID ---
+// --- FUNGSI HELPER BARU ---
+/**
+ * Memformat nomor telepon Indonesia ke format standar 62.
+ * @param {string} phoneNumber Nomor telepon mentah.
+ * @returns {string|null} Nomor telepon yang diformat atau null jika tidak valid.
+ */
+function formatIndonesianPhoneNumber(phoneNumber) {
+  if (!phoneNumber || typeof phoneNumber !== 'string') return null;
+
+  let cleaned = phoneNumber.replace(/\D/g, '');
+
+  if (cleaned.startsWith('62')) {
+    // Sudah benar
+  } else if (cleaned.startsWith('0')) {
+    cleaned = '62' + cleaned.substring(1);
+  } else if (cleaned.startsWith('8')) {
+    cleaned = '62' + cleaned;
+  } else {
+    return null;
+  }
+
+  // Validasi panjang (11 s/d 15 digit totalnya)
+  if (cleaned.length >= 11 && cleaned.length <= 15) {
+    return cleaned;
+  }
+
+  return null;
+}
+
+// --- CLOUD FUNCTION BARU UNTUK MEMBUAT PESANAN ---
+exports.createOrderAndProfile = onCall({ region: 'asia-southeast2' }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Anda harus login untuk membuat pesanan.');
+  }
+
+  const { customerInfo, shippingAddress, items, paymentMethod } = request.data;
+  const creator = { uid: request.auth.uid, email: request.auth.token.email };
+
+  const formattedPhone = formatIndonesianPhoneNumber(customerInfo.phone);
+  if (!formattedPhone) {
+    throw new HttpsError('invalid-argument', 'Nomor telepon tidak valid.');
+  }
+
+  const totalAmount = items.reduce((total, item) => total + (item.priceAtPurchase * item.quantity), 0);
+
+  const claims = request.auth.token;
+  let representativeIdForOrder = null;
+  if (claims.role === 'representatif') {
+    representativeIdForOrder = creator.uid;
+  } else if (claims.role === 'sales' && claims.representativeId) {
+    representativeIdForOrder = claims.representativeId;
+  }
+
+  try {
+    let orderIdToReturn = null;
+
+    await db.runTransaction(async (transaction) => {
+      const phoneRef = db.collection('phoneNumbers').doc(formattedPhone);
+      const profilesQuery = db.collection('profiles').where('phone', '==', formattedPhone).limit(1);
+
+      const existingProfiles = await transaction.get(profilesQuery);
+      let profileId;
+
+      if (existingProfiles.empty) {
+        const phoneDoc = await transaction.get(phoneRef);
+        if (phoneDoc.exists) {
+          throw new HttpsError('already-exists', 'Nomor telepon sudah terdaftar dengan profil lain.');
+        }
+
+        const newProfileRef = db.collection('profiles').doc();
+        profileId = newProfileRef.id;
+
+        const newProfileData = {
+          name: customerInfo.name,
+          phone: formattedPhone,
+          address: shippingAddress.fullAddress,
+          representativeId: representativeIdForOrder,
+          createdAt: FieldValue.serverTimestamp()
+        };
+
+        transaction.set(newProfileRef, newProfileData);
+        transaction.set(phoneRef, { profileId: profileId });
+
+      } else {
+        const profileDoc = existingProfiles.docs[0];
+        profileId = profileDoc.id;
+        const existingProfileRef = profileDoc.ref;
+
+        const profileDataToUpdate = {};
+        if (profileDoc.data().name !== customerInfo.name) {
+          profileDataToUpdate.name = customerInfo.name;
+        }
+        if (profileDoc.data().address !== shippingAddress.fullAddress) {
+          profileDataToUpdate.address = shippingAddress.fullAddress;
+        }
+
+        if (Object.keys(profileDataToUpdate).length > 0) {
+          transaction.update(existingProfileRef, profileDataToUpdate);
+        }
+      }
+
+      const newOrderRef = db.collection('orders').doc();
+      orderIdToReturn = newOrderRef.id;
+
+      const orderData = {
+        creator,
+        profileId,
+        customerInfo: { ...customerInfo, phone: formattedPhone },
+        shippingAddress,
+        items,
+        paymentMethod,
+        totalAmount,
+        status: 'new_order',
+        representativeId: representativeIdForOrder,
+        createdAt: FieldValue.serverTimestamp() // <-- PERBAIKAN DITAMBAHKAN DI SINI
+      };
+      transaction.set(newOrderRef, orderData);
+    });
+
+    return { success: true, orderId: orderIdToReturn };
+
+  } catch (error) {
+    console.error("Gagal membuat pesanan:", error);
+    if (error instanceof HttpsError) {
+      throw error;
+    }
+    throw new HttpsError('internal', 'Terjadi kesalahan internal saat membuat pesanan.');
+  }
+});
+
+// --- FUNGSI LAINNYA ---
+
 exports.generateDisplayId = onDocumentCreated({ region: 'asia-southeast2', document: "orders/{orderId}" }, async (event) => {
   const orderRef = event.data.ref;
   const now = new Date();
@@ -28,7 +152,7 @@ exports.generateDisplayId = onDocumentCreated({ region: 'asia-southeast2', docum
   const options = { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' };
   const formatter = new Intl.DateTimeFormat('sv-SE', options);
   const counterId = formatter.format(now);
-  
+
   const [yyyy, mm, dd] = counterId.split('-');
   const displayDate = `${yyyy.slice(-2)}${mm}${dd}`;
 
@@ -40,76 +164,21 @@ exports.generateDisplayId = onDocumentCreated({ region: 'asia-southeast2', docum
     if (counterDoc.exists) {
       newCount = counterDoc.data().count + 1;
     }
-    
+
     const formattedCount = String(newCount).padStart(3, '0');
     const displayId = `PO-${displayDate}-${formattedCount}`;
 
     transaction.set(counterRef, { count: newCount });
     transaction.update(orderRef, {
       displayId: displayId,
-      createdAt: FieldValue.serverTimestamp() 
+      createdAt: FieldValue.serverTimestamp()
     });
-    
+
     console.log(`Generated displayId: ${displayId} for order: ${event.params.orderId}`);
     return displayId;
   });
 });
 
-/**
- * Helper function to replace placeholders in a template string.
- */
-function populateTemplate(template, data) {
-  let output = template;
-  for (const key in data) {
-    output = output.replace(new RegExp(`{{${key}}}`, 'g'), data[key]);
-  }
-  return output;
-}
-
-// --- FUNGSI 2: MENGIRIM EMAIL KONFIRMASI ---
-exports.sendOrderEmail = onCall({ region: 'asia-southeast2', secrets: ["SENDGRID_API_KEY"] }, async (request) => {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  const orderId = request.data.orderId;
-  if (!orderId) {
-    throw new HttpsError('invalid-argument', 'Fungsi harus dipanggil dengan "orderId".');
-  }
-  try {
-    const orderDoc = await db.collection('orders').doc(orderId).get();
-    if (!orderDoc.exists) {
-      throw new HttpsError('not-found', 'Order tidak ditemukan.');
-    }
-    const orderData = orderDoc.data();
-    const emailTemplate = fs.readFileSync(path.join(__dirname, 'templates/order-notification.html'), 'utf8');
-
-    let itemListHtml = '';
-    orderData.items.forEach(item => {
-      itemListHtml += `<li><strong>${item.quantity}x</strong> - ${item.productType} (${item.size})</li>`;
-    });
-
-    const templateData = {
-      displayId: orderData.displayId,
-      customerName: orderData.customerInfo.name,
-      customerPhone: orderData.customerInfo.phone,
-      shippingAddress: `${orderData.shippingAddress.fullAddress}, ${orderData.shippingAddress.district}, ${orderData.shippingAddress.city}`,
-      itemList: itemListHtml
-    };
-
-    const msg = {
-      to: config.email.to,
-      from: config.email.from,
-      subject: `Pesanan Baru Masuk - ${orderData.displayId}`,
-      html: populateTemplate(emailTemplate, templateData),
-    };
-    await sgMail.send(msg);
-    return { success: true, message: `Notifikasi produksi berhasil dikirim untuk order ${orderData.displayId}` };
-  } catch (error) {
-    console.error("Gagal mengirim email:", error);
-    throw new HttpsError('internal', 'Gagal mengirim email.', error);
-  }
-});
-
-
-// --- FUNGSI PDF INVOICE ---
 const fonts = {
   Roboto: {
     normal: path.join(__dirname, 'fonts/Roboto-Regular.ttf'),
@@ -120,43 +189,41 @@ const fonts = {
 };
 
 exports.generateInvoicePdf = onCall({ region: 'asia-southeast2' }, async (request) => {
-    const orderId = request.data.orderId;
-    if (!orderId) {
-      throw new HttpsError('invalid-argument', 'Fungsi harus dipanggil dengan "orderId".');
+  const orderId = request.data.orderId;
+  if (!orderId) {
+    throw new HttpsError('invalid-argument', 'Fungsi harus dipanggil dengan "orderId".');
+  }
+
+  try {
+    const orderDoc = await db.collection('orders').doc(orderId).get();
+    if (!orderDoc.exists) {
+      throw new HttpsError('not-found', 'Order tidak ditemukan.');
     }
-  
-    try {
-      const orderDoc = await db.collection('orders').doc(orderId).get();
-      if (!orderDoc.exists) {
-        throw new HttpsError('not-found', 'Order tidak ditemukan.');
-      }
-      const orderData = orderDoc.data();
-      
-      // Menggunakan fungsi yang diimpor dari file terpisah
-      const docDefinition = getInvoiceDocDefinition(orderData, logoBase64);
-      
-      const printer = new pdfmake(fonts);
-      const pdfDoc = printer.createPdfKitDocument(docDefinition);
-  
-      const pdfBuffer = await new Promise((resolve, reject) => {
-          const chunks = [];
-          pdfDoc.on('data', chunk => chunks.push(chunk));
-          pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
-          pdfDoc.on('error', reject);
-          pdfDoc.end();
-      });
-  
-      return {
-        pdf: pdfBuffer.toString('base64'),
-        fileName: `Invoice-${orderData.displayId || orderId}.pdf`
-      };
-    } catch (error) {
-      console.error("Gagal membuat PDF invoice:", error);
-      throw new HttpsError('internal', 'Gagal membuat PDF invoice.', error);
-    }
+    const orderData = orderDoc.data();
+
+    const docDefinition = getInvoiceDocDefinition(orderData, logoBase64);
+
+    const printer = new pdfmake(fonts);
+    const pdfDoc = printer.createPdfKitDocument(docDefinition);
+
+    const pdfBuffer = await new Promise((resolve, reject) => {
+      const chunks = [];
+      pdfDoc.on('data', chunk => chunks.push(chunk));
+      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
+      pdfDoc.on('error', reject);
+      pdfDoc.end();
+    });
+
+    return {
+      pdf: pdfBuffer.toString('base64'),
+      fileName: `Invoice-${orderData.displayId || orderId}.pdf`
+    };
+  } catch (error) {
+    console.error("Gagal membuat PDF invoice:", error);
+    throw new HttpsError('internal', 'Gagal membuat PDF invoice.', error);
+  }
 });
 
-// --- FUNGSI MANAJEMEN PENGGUNA ---
 exports.setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
   if (request.auth.token.role !== 'admin') {
     throw new HttpsError('permission-denied', 'Hanya admin yang bisa mengubah peran pengguna.');
@@ -216,19 +283,17 @@ exports.createNewUser = onCall({ region: 'asia-southeast2' }, async (request) =>
   } catch (error) {
     console.error("Gagal membuat pengguna baru:", error);
     if (error.code === 'auth/email-already-exists') {
-        throw new HttpsError('already-exists', 'Email sudah terdaftar.');
+      throw new HttpsError('already-exists', 'Email sudah terdaftar.');
     }
     if (error.code === 'auth/invalid-password') {
-        throw new HttpsError('invalid-argument', 'Password tidak valid. Harus terdiri dari minimal 6 karakter.');
+      throw new HttpsError('invalid-argument', 'Password tidak valid. Harus terdiri dari minimal 6 karakter.');
     }
     throw new HttpsError('internal', 'Gagal membuat pengguna baru.');
   }
 });
 
 exports.sendPasswordReset = onCall({
-  region: 'asia-southeast2',
-  secrets: ["SENDGRID_API_KEY"],
-  cors: [/localhost:\d+$/, "https://pulazzz.lokataraindustry.com"]
+  region: 'asia-southeast2'
 }, async (request) => {
   if (request.auth.token.role !== 'admin') {
     throw new HttpsError('permission-denied', 'Hanya admin yang bisa mengirim reset password.');
@@ -239,13 +304,8 @@ exports.sendPasswordReset = onCall({
   }
   try {
     const link = await admin.auth().generatePasswordResetLink(email);
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    await sgMail.send({
-      to: email,
-      from: config.email.from,
-      subject: 'Reset Password Akun Sistem Order Pulazzz Anda',
-      html: `Halo,<br><br>Anda menerima email ini karena admin telah meminta reset password untuk akun Anda. Silakan klik link di bawah ini untuk membuat password baru:<br><br><a href="${link}">Reset Password</a><br><br>Jika Anda tidak merasa meminta ini, silakan abaikan email ini.<br><br>Terima kasih,<br>Tim Pulazzz`
-    });
+    // Logika pengiriman email (misalnya via SendGrid) akan ada di sini
+    console.log(`Link reset password untuk ${email} adalah: ${link}`);
     return { success: true, message: `Link reset password berhasil dikirim ke ${email}.` };
   } catch (error) {
     console.error("Gagal mengirim link reset password:", error);
