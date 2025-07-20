@@ -315,3 +315,115 @@ exports.sendPasswordReset = onCall({
     throw new HttpsError('internal', 'Gagal mengirim link reset password.');
   }
 });
+
+// --- FUNGSI SIGNUP & UNDANGAN ---
+
+exports.sendInvitation = onCall({ region: 'asia-southeast2', secrets: ["SENDGRID_API_KEY"] }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Anda harus login untuk mengirim undangan.');
+  }
+
+  const { inviteeEmail } = request.data;
+  if (!inviteeEmail) {
+    throw new HttpsError('invalid-argument', 'Email calon pengguna wajib diisi.');
+  }
+
+  const inviter = {
+    uid: request.auth.uid,
+    email: request.auth.token.email
+  };
+
+  try {
+    // Buat dokumen undangan baru untuk mendapatkan ID unik sebagai kode referal
+    const invitationRef = await db.collection('invitations').add({
+      inviterUid: inviter.uid,
+      inviterEmail: inviter.email,
+      inviteeEmail: inviteeEmail,
+      status: 'pending',
+      createdAt: FieldValue.serverTimestamp()
+    });
+
+    const referralCode = invitationRef.id;
+    // Ganti URL ini dengan URL aplikasi Anda saat di-deploy
+    const signupLink = `http://127.0.0.1:5002/signup.html?ref=${referralCode}`;
+
+    // Kirim email menggunakan SendGrid
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    const msg = {
+      to: inviteeEmail,
+      from: 'noreply@lokataraindustry.com', // Ganti dengan email pengirim Anda
+      subject: `Anda Diundang untuk Bergabung dengan Sistem Order Pulazzz`,
+      html: `
+                <h2>Halo!</h2>
+                <p>Anda telah diundang oleh <strong>${inviter.email}</strong> untuk bergabung dengan Sistem Order Pulazzz sebagai Sales.</p>
+                <p>Silakan klik link di bawah ini untuk menyelesaikan pendaftaran Anda:</p>
+                <a href="${signupLink}" style="background-color: #0d6efd; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Selesaikan Pendaftaran</a>
+                <p>Jika Anda tidak merasa diundang, silakan abaikan email ini.</p>
+                <br>
+                <p>Terima kasih,</p>
+                <p>Tim Pulazzz</p>
+            `,
+    };
+
+    await sgMail.send(msg);
+    return { success: true, message: `Undangan berhasil dikirim ke ${inviteeEmail}.` };
+
+  } catch (error) {
+    console.error("Gagal mengirim undangan:", error);
+    throw new HttpsError('internal', 'Gagal memproses undangan.');
+  }
+});
+
+
+exports.completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => {
+  const { referralCode, password, name, phone, address } = request.data;
+
+  if (!referralCode || !password || !name || !phone || !address) {
+    throw new HttpsError('invalid-argument', 'Data pendaftaran tidak lengkap.');
+  }
+
+  const invitationRef = db.collection('invitations').doc(referralCode);
+
+  return db.runTransaction(async (transaction) => {
+    const invitationDoc = await transaction.get(invitationRef);
+
+    if (!invitationDoc.exists || invitationDoc.data().status !== 'pending') {
+      throw new HttpsError('not-found', 'Kode undangan tidak valid atau sudah digunakan.');
+    }
+
+    const invitationData = invitationDoc.data();
+
+    // Buat pengguna di Firebase Authentication
+    const userRecord = await admin.auth().createUser({
+      email: invitationData.inviteeEmail,
+      password: password,
+      displayName: name,
+    });
+
+    // Set custom claims untuk peran dan ID representatif (pengundang)
+    await admin.auth().setCustomUserClaims(userRecord.uid, {
+      role: 'sales',
+      representativeId: invitationData.inviterUid
+    });
+
+    // Buat profil pengguna di koleksi 'profiles'
+    const profileRef = db.collection('profiles').doc(userRecord.uid);
+    transaction.set(profileRef, {
+      name: name,
+      phone: formatIndonesianPhoneNumber(phone),
+      address: address,
+      email: invitationData.inviteeEmail,
+      role: 'sales',
+      referralId: invitationData.inviterUid,
+      representativeId: invitationData.inviterUid, // Untuk sales, referral = representative
+      createdAt: FieldValue.serverTimestamp(),
+      accountType: 'user'
+    });
+
+    // Update status undangan
+    transaction.update(invitationRef, { status: 'completed', completedAt: FieldValue.serverTimestamp() });
+
+    return { success: true, message: 'Pendaftaran berhasil!' };
+  });
+});
