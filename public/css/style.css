@@ -1,43 +1,31 @@
+/* public/css/style.css */
 .main-container-limited {
-    max-width: 600px;
-    /* Anda bisa sesuaikan lebar maksimal ini */
+    max-width: 800px;
     margin-left: auto;
-    /* Tambahan untuk centering */
     margin-right: auto;
-    /* Tambahan untuk centering */
 }
 
-/* Efek tombol ditekan */
-/* Memberikan transisi yang mulus untuk semua tombol */
 .btn {
-  transition: transform 0.1s ease-out;
+    transition: transform 0.1s ease-out;
 }
 
-/* Efek saat tombol sedang ditekan (active) */
 .btn:active {
-  transform: scale(0.97);
-  box-shadow: none; /* Opsional: hilangkan bayangan saat ditekan */
+    transform: scale(0.97);
+    box-shadow: none;
 }
 
-
-/* Membuat placeholder lebih transparan/seamless */
 .form-control::placeholder {
-  color: #ced4da; /* Warna abu-abu yang lebih terang dari default Bootstrap */
-  font-style: italic; /* Membuat tulisan miring agar lebih terlihat sebagai petunjuk */
+    color: #ced4da;
+    font-style: italic;
 }
 
-/* Warna background kustom untuk header */
 .header-bg {
     background-color: #253d8d;
 }
 
-/* Mengatur tinggi logo di header agar tidak terlalu besar */
 .header-logo {
     height: 40px;
-    /* Anda bisa sesuaikan ukurannya */
 }
-
-/* warna status produksi */
 
 .status-select {
     border-width: 2px;
@@ -69,31 +57,28 @@
     color: #dc3545;
 }
 
-/* --- Gaya Kustom untuk Kartu Dashboard --- */
 .dashboard-card .card-body {
-    font-size: 0.9rem; /* Perkecil font default di body kartu */
+    font-size: 0.9rem;
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
 }
 
 .dashboard-card .card-body p {
-    margin-bottom: 0.25rem; /* Kurangi jarak antar paragraf */
+    margin-bottom: 0.25rem;
 }
 
 .dashboard-card .order-summary-list {
-    font-size: 0.85rem; /* Perkecil font khusus untuk ringkasan item */
-    padding-left: 0; /* Atur padding kiri untuk list */
+    font-size: 0.85rem;
+    padding-left: 0;
     margin-top: 0.5rem;
-    margin-bottom: 0; /* Hilangkan margin bawah dari list */
+    margin-bottom: 0;
 }
 
-/* Gaya untuk tombol aksi yang dinonaktifkan */
 .action-btn.is-disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
 
-/* Gaya untuk Full Page Loader */
 #full-page-loader {
     position: fixed;
     top: 0;
@@ -106,4 +91,22 @@
     justify-content: center;
     align-items: center;
     flex-direction: column;
+}
+
+/* ============================================= */
+/* --- GAYA BARU UNTUK HALAMAN KONFIRMASI --- */
+/* ============================================= */
+.confirmation-card .card-body {
+    font-size: 0.9rem;
+    /* Perkecil semua font di dalam body kartu */
+}
+
+.confirmation-card h5 {
+    font-size: 1.1rem;
+    /* Sedikit perkecil sub-judul */
+}
+
+.confirmation-card .table {
+    font-size: 0.85rem;
+    /* Perkecil font di dalam tabel */
 }

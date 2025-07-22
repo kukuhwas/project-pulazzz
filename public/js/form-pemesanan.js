@@ -1,11 +1,12 @@
 // public/js/form-pemesanan.js
 
 import { db, auth, functions } from './firebase-config.js';
-import { collection, doc, getDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    // --- Referensi Elemen & State ---
     const orderForm = document.getElementById('order-form');
     const customerPhoneInput = document.getElementById('customer-phone');
     const fullPageLoader = document.getElementById('full-page-loader');
@@ -22,53 +23,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let cartItems = [];
 
-    async function initializeAddressSearch() {
+    // --- LOGIKA PENCARIAN ALAMAT ---
+    function initializeAddressSearch() {
+        const searchAddress = httpsCallable(functions, 'searchAddress');
         const tomSelect = new TomSelect(addressSearchSelect, {
             valueField: 'id',
             labelField: 'text',
             searchField: 'text',
             create: false,
-            placeholder: 'Ketik untuk mencari kecamatan...',
+            placeholder: 'Ketik min. 3 huruf nama kecamatan/kota...',
             render: {
-                item: function (data, escape) {
-                    return `<div>${escape(data.district)}, ${escape(data.city)}, ${escape(data.province)}</div>`;
-                },
-                option: function (data, escape) {
-                    return `<div><strong class="d-block">${escape(data.district)}</strong><small class="text-muted">${escape(data.city)}, ${escape(data.province)}</small></div>`;
-                },
+                item: (data, escape) => `<div>${escape(data.district)}, ${escape(data.city)}, ${escape(data.province)}</div>`,
+                option: (data, escape) => `<div><strong class="d-block">${escape(data.district)}</strong><small class="text-muted">${escape(data.city)}, ${escape(data.province)}</small></div>`,
+                no_results: (data, escape) => `<div class="p-2">Tidak ditemukan hasil untuk "${escape(data.input)}".</div>`,
+                loading: (data, escape) => `<div class="p-2 text-muted">Mencari...</div>`,
             },
-            load: async (query, callback) => {
-                if (tomSelect.loading > 1) {
-                    return callback();
-                }
-
-                try {
-                    console.log("Memuat data alamat dari Firestore...");
-                    const [provincesSnap, citiesSnap, districtsSnap] = await Promise.all([
-                        getDocs(collection(db, "provinces")),
-                        getDocs(collection(db, "cities")),
-                        getDocs(collection(db, "districts"))
-                    ]);
-
-                    const provinces = new Map(provincesSnap.docs.map(doc => [doc.id, doc.data().name]));
-                    const cities = new Map(citiesSnap.docs.map(doc => [doc.id, { name: doc.data().name, provinceId: doc.data().provinceId }]));
-
-                    const addressOptions = districtsSnap.docs.map(doc => {
-                        const district = doc.data();
-                        const city = cities.get(district.cityId);
-                        const province = provinces.get(city?.provinceId);
-                        const text = `${district.name}, ${city?.name || ''}, ${province || ''}`;
-                        return { id: doc.id, district: district.name, city: city?.name || '', province: province || '', text };
+            load: (query, callback) => {
+                if (query.length < 3) return callback();
+                searchAddress({ query: query })
+                    .then(result => callback(result.data))
+                    .catch(error => {
+                        console.error("Gagal mencari alamat:", error);
+                        callback([]);
                     });
-
-                    tomSelect.addOptions(addressOptions);
-                    callback(addressOptions);
-                    console.log("Data alamat berhasil dimuat.");
-
-                } catch (error) {
-                    console.error("Gagal memuat data alamat untuk pencarian:", error);
-                    callback([]);
-                }
             }
         });
 
@@ -78,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 hiddenProvinceInput.value = selectedData.province;
                 hiddenCityInput.value = selectedData.city;
                 hiddenDistrictInput.value = selectedData.district;
-                addressSearchSelect.setCustomValidity("");
             } else {
                 hiddenProvinceInput.value = '';
                 hiddenCityInput.value = '';
@@ -89,7 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeAddressSearch();
 
-    function formatAndValidatePhone(inputElement) {
+    // --- FUNGSI HELPER & EVENT LISTENER LAINNYA ---
+    function formatPhoneForDisplay(inputElement) {
         let value = inputElement.value.replace(/\D/g, '');
         if (value.startsWith('62')) { value = value.substring(2); }
         if (value.startsWith('0')) { value = value.substring(1); }
@@ -101,10 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     customerPhoneInput.addEventListener('blur', (event) => {
-        formatAndValidatePhone(event.target);
+        formatPhoneForDisplay(event.target);
     });
 
-    // --- LOGIKA KERANJANG BELANJA (YANG HILANG SEBELUMNYA) ---
+    // --- LOGIKA KERANJANG BELANJA ---
     function renderProductInTable(item) {
         const rowId = `row-${item.productId}`;
         const existingRow = document.getElementById(rowId);
@@ -113,8 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newRow = document.createElement('tr');
         newRow.id = rowId;
         newRow.innerHTML = `
-            <td>${item.productType}</td>
-            <td>${item.size}</td>
+            <td>${item.type} ${item.size} (${item.thickness} cm)</td>
             <td class="text-center">${item.quantity}</td>
             <td><button type="button" class="btn btn-danger btn-sm">Hapus</button></td>
         `;
@@ -132,22 +108,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     addProductBtn.addEventListener('click', async () => {
         const type = document.querySelector('input[name="product-type"]:checked')?.value;
+        const thickness = document.querySelector('input[name="product-thickness"]:checked')?.value;
         const size = productSizeSelect.value;
         const quantity = parseInt(productQtyInput.value);
 
-        if (!type || !size || !quantity || quantity < 1) {
-            Swal.fire('Data Tidak Lengkap', 'Harap pilih Jenis Produk, Ukuran, dan Jumlah yang valid.', 'warning');
+        if (!type || !thickness || !size || !quantity || quantity < 1) {
+            Swal.fire('Data Tidak Lengkap', 'Harap pilih Jenis Produk, Ketebalan, Ukuran, dan Jumlah yang valid.', 'warning');
             return;
         }
 
         productDetailsWrapper.classList.remove('d-none');
-        const productId = `${type.toLowerCase().replace(' ', '_')}_${size.replace('x', '')}`;
+        
+        const productId = `${type.toLowerCase().replace(' ', '_')}_${size.replace('x', '')}_${thickness}`;
 
         try {
             const productRef = doc(db, "products", productId);
             const productSnap = await getDoc(productRef);
             if (!productSnap.exists()) {
-                Swal.fire('Error', 'Produk tidak ditemukan di database.', 'error');
+                Swal.fire('Error', 'Varian produk tidak ditemukan di database. Pastikan semua pilihan benar.', 'error');
                 return;
             }
 
@@ -161,8 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 const newCartItem = {
                     productId,
-                    productType: type,
-                    size,
+                    type: productData.type,
+                    size: productData.size,
+                    thickness: productData.thickness,
                     quantity,
                     priceAtPurchase: productData.price,
                     subtotal: productData.price * quantity
@@ -181,11 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         event.stopPropagation();
 
-        if (!orderForm.checkValidity() || !addressSearchSelect.value) {
+        if (!orderForm.checkValidity()) {
             orderForm.classList.add('was-validated');
-            if (!addressSearchSelect.value) {
-                document.querySelector('.ts-control').classList.add('is-invalid');
-            }
             validationModal.show();
             return;
         }
@@ -202,9 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const phoneValue = document.getElementById('customer-phone').value;
-        const fullPhone = `62${phoneValue}`;
-        if (fullPhone.length < 11 || fullPhone.length > 15) {
-            Swal.fire('Error', 'Panjang nomor telepon tidak valid. Pastikan antara 9-13 digit setelah +62.', 'error');
+        if ((`62${phoneValue}`).length < 11 || (`62${phoneValue}`).length > 15) {
+            Swal.fire('Error', 'Panjang nomor telepon tidak valid.', 'error');
             return;
         }
 
@@ -223,13 +198,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     district: hiddenDistrictInput.value,
                 },
                 items: cartItems.map(item => ({
-                    productType: item.productType,
+                    productId: item.productId,
+                    type: item.type,
                     size: item.size,
+                    thickness: item.thickness,
                     quantity: item.quantity,
                     priceAtPurchase: item.priceAtPurchase,
                     subtotal: item.subtotal
                 })),
-                paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').nextElementSibling.textContent.trim(),
+                paymentMethod: document.querySelector('input[name="paymentMethod"]:checked').value,
             };
 
             const createOrder = httpsCallable(functions, 'createOrderAndProfile');

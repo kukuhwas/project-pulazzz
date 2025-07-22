@@ -38,12 +38,13 @@ const sendInvitation = onCall({ region: 'asia-southeast2', secrets: ["SENDGRID_A
             createdAt: FieldValue.serverTimestamp()
         });
         const referralCode = invitationRef.id;
-        const signupLink = `http://127.0.0.1:5002/signup.html?ref=${referralCode}`; // Ganti dengan URL produksi saat deploy
+        const baseUrl = process.env.APP_URL || 'http://127.0.0.1:5002';
+        const signupLink = `${baseUrl}/signup.html?ref=${referralCode}`;
         const sgMail = require('@sendgrid/mail');
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
         const msg = {
             to: inviteeEmail,
-            from: 'noreply@lokataraindustry.com', // Pastikan email ini terverifikasi di SendGrid
+            from: 'noreply@lokataraindustry.com',
             subject: `Anda Diundang untuk Bergabung dengan Sistem Order Pulazzz`,
             html: `<p>Anda telah diundang oleh <strong>${inviter.email}</strong> untuk bergabung. Silakan klik link di bawah untuk mendaftar:</p><a href="${signupLink}">Selesaikan Pendaftaran</a>`,
         };
@@ -72,17 +73,20 @@ const completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => 
             password: password,
             displayName: name,
         });
+
+
         await admin.auth().setCustomUserClaims(userRecord.uid, {
-            role: 'sales',
+            role: 'reseller',
             representativeId: invitationData.inviterUid
         });
+
         const profileRef = db.collection('profiles').doc(userRecord.uid);
         transaction.set(profileRef, {
             name: name,
             phone: formatIndonesianPhoneNumber(phone),
             address: address,
             email: invitationData.inviteeEmail,
-            role: 'sales',
+            role: 'reseller',
             referralId: invitationData.inviterUid,
             representativeId: invitationData.inviterUid,
             createdAt: FieldValue.serverTimestamp(),
@@ -143,14 +147,17 @@ const setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa mengubah peran pengguna.');
     }
     const { email, role, representativeId } = request.data;
-    const validRoles = ['sales', 'produksi', 'admin', 'representatif'];
+
+
+    const validRoles = ['reseller', 'produksi', 'admin', 'representatif'];
     if (!email || !role || !validRoles.includes(role)) {
         throw new HttpsError('invalid-argument', 'Email atau peran tidak valid.');
     }
     try {
         const user = await admin.auth().getUserByEmail(email);
         const claims = { role: role };
-        claims.representativeId = (role === 'sales' && representativeId) ? representativeId : null;
+
+        claims.representativeId = (role === 'reseller' && representativeId) ? representativeId : null;
 
         await admin.auth().setCustomUserClaims(user.uid, claims);
         return { success: true, message: `Berhasil menjadikan ${email} sebagai ${role}.` };
@@ -183,14 +190,18 @@ const createNewUser = onCall({ region: 'asia-southeast2' }, async (request) => {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa membuat pengguna baru.');
     }
     const { email, password, role, representativeId } = request.data;
-    const validRoles = ['sales', 'produksi', 'admin', 'representatif'];
+
+
+    const validRoles = ['reseller', 'produksi', 'admin', 'representatif'];
     if (!email || !password || !role || !validRoles.includes(role)) {
         throw new HttpsError('invalid-argument', 'Input tidak valid.');
     }
     try {
         const userRecord = await admin.auth().createUser({ email, password });
         const claims = { role: role };
-        claims.representativeId = (role === 'sales' && representativeId) ? representativeId : null;
+
+
+        claims.representativeId = (role === 'reseller' && representativeId) ? representativeId : null;
 
         await admin.auth().setCustomUserClaims(userRecord.uid, claims);
         return { success: true, message: `Berhasil membuat pengguna ${email} dengan peran ${role}.` };
@@ -227,8 +238,28 @@ const sendPasswordReset = onCall({ region: 'asia-southeast2' }, async (request) 
     }
 });
 
-// Ekspor semua fungsi dalam file ini
+// Tambahkan fungsi ini di dalam functions/users.js
+
+const getInvitationDetails = onCall({ region: 'asia-southeast2' }, async (request) => {
+    const { referralCode } = request.data;
+    if (!referralCode) {
+        throw new HttpsError('invalid-argument', 'Kode undangan tidak disediakan.');
+    }
+
+    const invitationRef = db.collection('invitations').doc(referralCode);
+    const invitationDoc = await invitationRef.get();
+
+    if (!invitationDoc.exists || invitationDoc.data().status !== 'pending') {
+        throw new HttpsError('not-found', 'Kode undangan tidak valid atau sudah digunakan.');
+    }
+
+    return {
+        email: invitationDoc.data().inviteeEmail
+    };
+});
+
 module.exports = {
+    getInvitationDetails, // Tambahkan ini
     sendInvitation,
     completeSignup,
     updateUserProfile,

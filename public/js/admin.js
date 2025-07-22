@@ -1,16 +1,10 @@
 // public/js/admin.js
-console.log('DEBUG: File admin.js mulai dieksekusi.');
 
 import { auth, functions } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
-// Tunggu hingga seluruh dokumen HTML selesai dimuat
 document.addEventListener('DOMContentLoaded', () => {
-
-    console.log('DEBUG: Event DOMContentLoaded telah aktif.');
-    console.log('DEBUG: Mencari #user-card-grid dari dalam DOMContentLoaded:', document.getElementById('user-card-grid'));
-
 
     // --- Referensi Elemen ---
     const adminContent = document.getElementById('admin-content');
@@ -27,26 +21,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const setUserRole = httpsCallable(functions, 'setUserRole');
     const sendPasswordReset = httpsCallable(functions, 'sendPasswordReset');
 
-    /**
-     * Membuat dan mengembalikan elemen HTML untuk satu kartu pengguna.
-     * @param {object} user - Objek pengguna dari Firestore.
-     * @param {Array} representatives - Daftar semua pengguna yang berperan sebagai representatif.
-     * @returns {HTMLElement} - Elemen div yang berisi kartu pengguna.
-     */
     function createUserCard(user, representatives) {
         const cardWrapper = document.createElement('div');
         cardWrapper.className = 'col-md-6 col-lg-4';
         cardWrapper.dataset.uid = user.uid;
-
         const roleBadges = {
             admin: 'bg-danger',
-            sales: 'bg-info text-dark',
+            reseller: 'bg-info text-dark',
             representatif: 'bg-success',
             produksi: 'bg-warning text-dark',
         };
         const roleBadgeClass = roleBadges[user.role] || 'bg-secondary';
 
-        let repSelectHTML = `<select class="form-select form-select-sm representative-select" ${user.role !== 'sales' ? 'disabled' : ''}>`;
+        let repSelectHTML = `<select class="form-select form-select-sm representative-select" ${user.role !== 'reseller' ? 'disabled' : ''}>`;
         repSelectHTML += '<option value="">-- Tidak Ada --</option>';
         representatives.forEach(rep => {
             repSelectHTML += `<option value="${rep.uid}" ${user.representativeId === rep.uid ? 'selected' : ''}>${rep.email}</option>`;
@@ -63,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="mb-3">
                         <label class="form-label-sm">Ubah Peran</label>
                         <select class="form-select form-select-sm role-select" ${user.role === 'admin' ? 'disabled' : ''}>
-                            <option value="sales" ${user.role === 'sales' ? 'selected' : ''}>Sales</option>
+                            <option value="reseller" ${user.role === 'reseller' ? 'selected' : ''}>Reseller</option>
                             <option value="representatif" ${user.role === 'representatif' ? 'selected' : ''}>Representatif</option>
                             <option value="produksi" ${user.role === 'produksi' ? 'selected' : ''}>Produksi</option>
                             <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
@@ -123,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Event Listeners ---
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             const idTokenResult = await user.getIdTokenResult(true);
@@ -139,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     newUserRoleSelect.addEventListener('change', (event) => {
-        representativeSelectWrapper.style.display = (event.target.value === 'sales') ? 'block' : 'none';
+        representativeSelectWrapper.style.display = (event.target.value === 'reseller') ? 'block' : 'none';
         document.getElementById('new-user-representative').value = '';
     });
 
@@ -184,14 +170,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const representativeId = card.querySelector('.representative-select').value;
 
             try {
-                const payload = { email, role, representativeId: role === 'sales' ? (representativeId || null) : null };
+                const payload = { email, role, representativeId: role === 'reseller' ? (representativeId || null) : null };
                 const result = await setUserRole(payload);
                 Swal.fire('Berhasil!', result.data.message, 'success');
             } catch (error) {
                 console.error("Gagal mengubah peran:", error);
                 Swal.fire('Gagal', error.message, 'error');
             } finally {
-                // Tidak perlu disable button selamanya
                 button.disabled = false;
                 button.innerHTML = '<i class="bi bi-save"></i> Simpan';
                 loadUserList();
@@ -231,11 +216,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target.classList.contains('role-select')) {
             const card = event.target.closest('.col-md-6');
             const repSelect = card.querySelector('.representative-select');
-            repSelect.disabled = (event.target.value !== 'sales');
-            if (event.target.value !== 'sales') {
+            repSelect.disabled = (event.target.value !== 'reseller');
+            if (event.target.value !== 'reseller') {
                 repSelect.value = '';
             }
         }
     });
 
-}); // Akhir dari DOMContentLoaded
+});

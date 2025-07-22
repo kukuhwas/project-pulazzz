@@ -1,2 +1,6 @@
 node_modules/
 *.local
+
+# Firebase/Google Cloud credentials
+service-account-key.json
+service-account-key-production.json

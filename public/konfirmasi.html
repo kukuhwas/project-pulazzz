@@ -1,3 +1,4 @@
+<!-- public/konfirmasi.html -->
 <!DOCTYPE html>
 <html lang="id">
 
@@ -14,9 +15,24 @@
 </head>
 
 <body>
-    <header id="main-header"></header>
+
+    <nav id="main-header" class="navbar navbar-dark header-bg shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="/assets/logo-pulazzz-putih.png" alt="Logo Pulazzz" class="header-logo me-2">
+                <span class="d-none d-sm-inline">Order System</span>
+            </a>
+            <div class="d-flex">
+                <div class="spinner-border spinner-border-sm text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
     <main class="container mt-5 main-container-limited">
-        <div id="order-details-card" class="card shadow-sm">
+        <div id="order-details-card" class="card shadow-sm confirmation-card">
             <div id="confirmation-header" class="card-header text-white">
                 <h4 class="my-0" id="confirmation-title">Memuat...</h4>
             </div>
@@ -40,7 +56,6 @@
                             </h4>
                             <p class="mb-1"><strong>Tanggal:</strong> <span id="order-date">-</span></p>
                             <p class="mb-1"><strong>Dibuat Oleh:</strong> <span id="creator-email">-</span></p>
-
                         </div>
                     </div>
 
@@ -49,26 +64,24 @@
                         <table class="table mb-0">
                             <thead>
                                 <tr>
+                                    <!-- PERBAIKAN: Menambahkan kolom Ketebalan -->
                                     <th scope="col">Produk</th>
                                     <th scope="col">Ukuran</th>
+                                    <th scope="col" class="text-center">Tebal</th>
                                     <th scope="col" class="text-center">Qty</th>
                                     <th scope="col" class="text-end">Subtotal</th>
                                 </tr>
                             </thead>
-
                             <tbody id="item-list">
                             </tbody>
-
                             <tfoot>
                                 <tr>
-                                    <td colspan="3" class="text-end border-0"><strong>Total Pembayaran:</strong></td>
-                                    <td class="text-end border-0"><strong class="h5" id="total-amount">Rp 0</strong>
+                                    <td colspan="4" class="text-end border-0"><strong>Total Pembayaran:</strong></td>
+                                    <td class="text-end border-0"><strong id="total-amount">Rp 0</strong>
                                     </td>
                                 </tr>
                             </tfoot>
-
                         </table>
-
                     </div>
 
                     <hr class="my-4">
@@ -79,7 +92,7 @@
                 <div class="card-footer text-center no-print p-3">
                     <div class="d-grid gap-2 d-md-flex justify-content-md-center">
                         <button class="btn btn-primary" id="print-btn">🖨️ Cetak Invoice</button>
-                        <a href="index.html" class="btn btn-secondary">Buat Pesanan Baru</a>
+                        <a href="order-form.html" class="btn btn-secondary">Buat Pesanan Baru</a>
                     </div>
                 </div>
             </div>
@@ -88,10 +101,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/firebase-config.js"></script>
-    <script type="module" src="js/konfirmasi.js"></script>
     <script type="module" src="js/auth-guard.js"></script>
     <script type="module" src="js/navigation.js"></script>
-
+    <script type="module" src="js/konfirmasi.js"></script>
 
 </body>
 

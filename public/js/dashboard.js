@@ -2,7 +2,6 @@
 
 import { db, auth } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
-// PERBAIKAN: Tambahkan 'getDoc' ke dalam daftar impor
 import { collection, query, where, orderBy, getDocs, doc, updateDoc, limit, startAfter, getDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
 
 // --- Referensi Elemen ---
@@ -95,7 +94,7 @@ async function fetchAndDisplayOrders(isInitialLoad, statusFilter = 'all', userPr
         const ordersRef = collection(db, 'orders');
         let queryConstraints = [orderBy("createdAt", "desc"), limit(PAGE_SIZE)];
 
-        if (userProfile.role === 'sales') {
+        if (userProfile.role === 'reseller') {
             queryConstraints.unshift(where("creator.uid", "==", userProfile.uid));
         } else if (userProfile.role === 'representatif') {
             queryConstraints.unshift(where("representativeId", "==", userProfile.uid));
@@ -113,7 +112,7 @@ async function fetchAndDisplayOrders(isInitialLoad, statusFilter = 'all', userPr
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty && isInitialLoad) {
-            noOrdersMessage.innerHTML = (['sales', 'representatif'].includes(userProfile.role))
+            noOrdersMessage.innerHTML = (['reseller', 'representatif'].includes(userProfile.role))
                 ? 'Anda belum memiliki pesanan. Ayo buat penjualan pertama Anda! 🚀'
                 : 'Tidak ada pesanan dengan status ini.';
             noOrdersMessage.classList.remove('d-none');
@@ -122,7 +121,7 @@ async function fetchAndDisplayOrders(isInitialLoad, statusFilter = 'all', userPr
                 const order = { id: docSnap.id, ...docSnap.data() };
                 let itemsSummaryHtml = '<ul class="list-unstyled order-summary-list">';
                 (order.items || []).forEach(item => {
-                    itemsSummaryHtml += `<li>- ${item.quantity}x ${item.productType} (${item.size})</li>`;
+                    itemsSummaryHtml += `<li>- ${item.quantity}x ${item.type} ${item.size} (${item.thickness} cm)`;
                 });
                 itemsSummaryHtml += '</ul>';
 
@@ -187,7 +186,7 @@ onAuthStateChanged(auth, async (user) => {
             role: idTokenResult.claims.role,
         };
 
-        if (['admin', 'sales', 'representatif'].includes(currentUserProfile.role)) {
+        if (['admin', 'reseller', 'representatif'].includes(currentUserProfile.role)) {
             createOrderBtn.classList.remove('d-none');
         }
 
@@ -250,7 +249,7 @@ confirmStatusChangeBtn.addEventListener('click', async (event) => {
     try {
         if (nextStatus === 'cancelled') {
             const orderRef = doc(db, 'orders', docId);
-            const orderSnap = await getDoc(orderRef); // getDoc digunakan di sini
+            const orderSnap = await getDoc(orderRef); 
             if (orderSnap.exists() && orderSnap.data().status !== 'new_order') {
                 statusChangeModal.hide();
                 alert('Validasi gagal: Pesanan ini tidak lagi berstatus "Pesanan Baru" dan tidak dapat dibatalkan.');

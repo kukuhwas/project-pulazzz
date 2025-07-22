@@ -40,17 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // State
     let currentUser = null;
 
+
     const roleBadges = {
         admin: { class: 'bg-danger', text: 'Admin' },
-        sales: { class: 'bg-info text-dark', text: 'Sales' },
+        reseller: { class: 'bg-info text-dark', text: 'Reseller' },
         representatif: { class: 'bg-success', text: 'Representatif' },
         produksi: { class: 'bg-warning text-dark', text: 'Produksi' },
     };
 
-    /**
-     * Mengatur tampilan antara mode lihat dan mode edit.
-     * @param {boolean} isEditing - True jika masuk mode edit, false jika kembali ke mode lihat.
-     */
     function toggleEditMode(isEditing) {
         viewMode.classList.toggle('d-none', isEditing);
         editMode.classList.toggle('d-none', !isEditing);
@@ -62,10 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelEditBtn.classList.toggle('d-none', !isEditing);
     }
 
-    /**
-     * Memuat data profil dari Firestore dan menampilkannya.
-     * @param {string} uid - User ID dari pengguna yang sedang login.
-     */
     async function loadProfileData(uid) {
         try {
             const profileRef = doc(db, 'profiles', uid);
@@ -74,23 +67,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (profileSnap.exists()) {
                 const profileData = profileSnap.data();
 
-                // Isi data untuk mode lihat
                 nameView.textContent = profileData.name || '-';
                 emailView.textContent = profileData.email || '-';
                 phoneView.textContent = profileData.phone || '-';
                 addressView.textContent = profileData.address || '-';
 
-                // Isi data untuk form edit
                 nameEdit.value = profileData.name || '';
                 emailEdit.value = profileData.email || '';
-                phoneEdit.value = (profileData.phone || '').replace('62', ''); // Tampilkan tanpa 62
+                phoneEdit.value = (profileData.phone || '').replace('62', '');
                 addressEdit.value = profileData.address || '';
 
                 const badgeInfo = roleBadges[profileData.role] || { class: 'bg-secondary', text: profileData.role };
                 roleBadge.textContent = badgeInfo.text;
                 roleBadge.className = `badge ${badgeInfo.class}`;
 
-                if (profileData.role === 'sales' && profileData.representativeId) {
+
+                if (profileData.role === 'reseller' && profileData.representativeId) {
                     representativeInfoEl.style.display = 'block';
                     const repRef = doc(db, 'profiles', profileData.representativeId);
                     const repSnap = await getDoc(repRef);
@@ -112,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Event Listeners ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
@@ -128,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cancelEditBtn.addEventListener('click', () => {
         toggleEditMode(false);
-        // Reset form ke data awal jika ada perubahan yang belum disimpan
         if (currentUser) loadProfileData(currentUser.uid);
     });
 
@@ -158,8 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             await updateUserProfile(updatedData);
-            await loadProfileData(currentUser.uid); // Muat ulang data yang sudah diperbarui
-            toggleEditMode(false); // Kembali ke mode lihat
+            await loadProfileData(currentUser.uid);
+            toggleEditMode(false);
             Swal.fire('Berhasil!', 'Profil Anda telah diperbarui.', 'success');
         } catch (error) {
             console.error("Gagal memperbarui profil:", error);

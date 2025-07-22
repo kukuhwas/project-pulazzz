@@ -52,7 +52,7 @@ const createOrderAndProfile = onCall({ region: 'asia-southeast2' }, async (reque
     let representativeIdForOrder = null;
     if (claims.role === 'representatif') {
         representativeIdForOrder = creator.uid;
-    } else if (claims.role === 'sales' && claims.representativeId) {
+    } else if (claims.role === 'reseller' && claims.representativeId) {
         representativeIdForOrder = claims.representativeId;
     }
 

@@ -1,107 +1,91 @@
-// file: functions/seed.js
+// functions/seed.js
 
-const admin = require('firebase-admin');
-const fs = require('fs');
-const path = require('path');
+const admin = require("firebase-admin");
 
-// Inisialisasi Admin SDK
+// --- BLOK 2: Untuk koneksi ke database LIVE/PRODUKSI ---
+// Pastikan file 'service-account-key-production.json' ada di folder functions
+const serviceAccount = require("./service-account-key-production.json");
 admin.initializeApp({
-    projectId: 'project-pulazzz',
+  credential: admin.credential.cert(serviceAccount)
 });
-
-const auth = admin.auth();
+console.log("Menghubungkan ke database LIVE/PRODUKSI...");
 const db = admin.firestore();
+// --- AKHIR BLOK 2 ---
 
-// --- FUNGSI UNTUK MEMBUAT PENGGUNA UJI COBA (SEMUA ROLE) ---
-async function createTestUsers() {
-    console.log('Memulai pembuatan pengguna untuk pengujian...');
 
-    const testUsers = [
-        { email: 'test.admin@example.com', role: 'admin' },
-        { email: 'test.sales@example.com', role: 'sales' },
-        { email: 'test.produksi@example.com', role: 'produksi' },
-        { email: 'test.representatif@example.com', role: 'representatif' },
-    ];
+// --- DATA PRODUK BARU DENGAN STRUKTUR FINAL ---
+const newProductData = [
+    // Ortho Series
+    { "type": "Ortho Series", "size": "180x200", "thickness": 30, "price": 3099000 },
+    { "type": "Ortho Series", "size": "160x200", "thickness": 30, "price": 2859000 },
+    { "type": "Ortho Series", "size": "145x200", "thickness": 30, "price": 2619000 },
+    { "type": "Ortho Series", "size": "120x200", "thickness": 30, "price": 2379000 },
+    { "type": "Ortho Series", "size": "100x200", "thickness": 30, "price": 2139000 },
+    { "type": "Ortho Series", "size": "90x200", "thickness": 30, "price": 1899000 },
+    { "type": "Ortho Series", "size": "180x200", "thickness": 25, "price": 2999000 },
+    { "type": "Ortho Series", "size": "160x200", "thickness": 25, "price": 2759000 },
+    { "type": "Ortho Series", "size": "145x200", "thickness": 25, "price": 2519000 },
+    { "type": "Ortho Series", "size": "120x200", "thickness": 25, "price": 2279000 },
+    { "type": "Ortho Series", "size": "100x200", "thickness": 25, "price": 2039000 },
+    { "type": "Ortho Series", "size": "90x200", "thickness": 25, "price": 1799000 },
+    // Comfort Series
+    { "type": "Comfort Series", "size": "180x200", "thickness": 30, "price": 3099000 },
+    { "type": "Comfort Series", "size": "160x200", "thickness": 30, "price": 2859000 },
+    { "type": "Comfort Series", "size": "145x200", "thickness": 30, "price": 2619000 },
+    { "type": "Comfort Series", "size": "120x200", "thickness": 30, "price": 2379000 },
+    { "type": "Comfort Series", "size": "100x200", "thickness": 30, "price": 2139000 },
+    { "type": "Comfort Series", "size": "90x200", "thickness": 30, "price": 1899000 },
+    { "type": "Comfort Series", "size": "180x200", "thickness": 25, "price": 2999000 },
+    { "type": "Comfort Series", "size": "160x200", "thickness": 25, "price": 2759000 },
+    { "type": "Comfort Series", "size": "145x200", "thickness": 25, "price": 2519000 },
+    { "type": "Comfort Series", "size": "120x200", "thickness": 25, "price": 2279000 },
+    { "type": "Comfort Series", "size": "100x200", "thickness": 25, "price": 2039000 },
+    { "type": "Comfort Series", "size": "90x200", "thickness": 25, "price": 1799000 }
+];
 
-    const password = 'poposiroyo';
 
-    for (const userData of testUsers) {
-        const { email, role } = userData;
-        try {
-            // Cek dulu apakah pengguna sudah ada
-            await auth.getUserByEmail(email);
-            console.warn(`✔️ Pengguna ${email} (${role}) sudah ada.`);
-        } catch (error) {
-            if (error.code === 'auth/user-not-found') {
-                // Jika tidak ada, buat pengguna baru
-                const userRecord = await auth.createUser({
-                    email: email,
-                    password: password,
-                    emailVerified: true,
-                    displayName: `Test ${role.charAt(0).toUpperCase() + role.slice(1)}`,
-                });
-                await auth.setCustomUserClaims(userRecord.uid, { role: role });
-                console.log(`✅ Berhasil membuat pengguna ${email} dengan peran '${role}'.`);
-            } else {
-                console.error(`Gagal memeriksa pengguna ${email}:`, error);
-            }
-        }
-    }
+async function deleteCollection(collectionPath) {
+    const collectionRef = db.collection(collectionPath);
+    const snapshot = await collectionRef.limit(500).get();
+    if (snapshot.size === 0) return;
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    await deleteCollection(collectionPath);
 }
 
-// --- FUNGSI UNTUK MEMUAT DATA DARI FILE ---
-async function seedCollectionFromFile(filePath, collectionName) {
-    if (!fs.existsSync(filePath)) {
-        console.warn(`⚠️ File tidak ditemukan: ${filePath}. Melewati koleksi '${collectionName}'.`);
-        return;
-    }
+async function seedProducts() {
+    console.log("Menghapus data produk lama...");
+    await deleteCollection('products');
+    console.log("Data produk lama berhasil dihapus.");
 
-    console.log(`\nMemulai proses seeding untuk koleksi '${collectionName}'...`);
-    try {
-        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        if (!Array.isArray(data)) throw new Error("File data harus berupa array of objects.");
+    console.log("Memasukkan data produk baru...");
+    const batch = db.batch();
+    const productsRef = db.collection('products');
 
-        const collectionRef = db.collection(collectionName);
-        const batch = db.batch();
-        let count = 0;
-
-        data.forEach(item => {
-            if (!item.id) {
-                console.error(`Item dalam '${collectionName}' tidak memiliki 'id'. Item dilewati:`, item);
-                return;
-            }
-            const docId = item.id;
-            const docData = { ...item };
-            delete docData.id;
-
-            batch.set(collectionRef.doc(docId), docData);
-            count++;
+    newProductData.forEach(product => {
+        const docId = `${product.type.toLowerCase().replace(' ', '_')}_${product.size.replace('x', '')}_${product.thickness}`;
+        const docRef = productsRef.doc(docId);
+        
+        batch.set(docRef, {
+            type: product.type,
+            size: product.size,
+            thickness: product.thickness,
+            price: product.price
         });
+    });
 
-        await batch.commit();
-        console.log(`✅ Berhasil memuat ${count} dokumen ke koleksi '${collectionName}'.`);
+    await batch.commit();
+    console.log(`✅ Berhasil memasukkan ${newProductData.length} data produk baru.`);
+}
 
+async function main() {
+    try {
+        await seedProducts();
+        console.log('\nProses seeding data produk selesai!');
     } catch (error) {
-        console.error(`Gagal memuat data untuk '${collectionName}':`, error.message);
+        console.error('Terjadi kesalahan saat seeding data:', error);
     }
 }
 
-// --- FUNGSI UTAMA UNTUK MENJALANKAN SEMUA SEEDING ---
-async function main() {
-    console.log('Memulai proses seeding...');
-
-    // 1. Buat semua pengguna uji coba
-    await createTestUsers();
-
-    // 2. Muat semua koleksi dari file JSON
-    await seedCollectionFromFile(path.join(__dirname, 'seed-data/cities.json'), 'cities');
-    await seedCollectionFromFile(path.join(__dirname, 'seed-data/districts.json'), 'districts');
-    await seedCollectionFromFile(path.join(__dirname, 'seed-data/orderCounters.json'), 'orderCounters');
-    await seedCollectionFromFile(path.join(__dirname, 'seed-data/orders.json'), 'orders');
-    await seedCollectionFromFile(path.join(__dirname, 'seed-data/products.json'), 'products');
-    await seedCollectionFromFile(path.join(__dirname, 'seed-data/provinces.json'), 'provinces');
-
-    console.log('\nSemua proses seeding telah selesai!');
-}
-
-main().catch(console.error);
+main();
