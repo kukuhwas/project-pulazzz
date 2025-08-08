@@ -22,8 +22,13 @@ loginForm.addEventListener('submit', async (event) => {
     // Tunggu hingga token ID siap untuk mendapatkan peran
     const idTokenResult = await user.getIdTokenResult(true); // 'true' untuk memaksa refresh token
     const role = idTokenResult.claims.role;
-    // Arahkan semua pengguna ke dashboard setelah login berhasil
-    window.location.href = 'dashboard.html';
+
+    // Arahkan pengguna berdasarkan peran
+    if (role === 'admin') {
+      window.location.href = 'admin.html';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
 
   } catch (error) {
     // Jika gagal, tampilkan pesan error
