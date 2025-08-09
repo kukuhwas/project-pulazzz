@@ -7,7 +7,8 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "deploy:staging": "firebase deploy --only functions -P staging",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "set-admin": "node set-admin-claim.js"
   },
   "engines": {
     "node": "20"
