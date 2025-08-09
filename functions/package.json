@@ -8,7 +8,8 @@
     "deploy": "firebase deploy --only functions",
     "deploy:staging": "firebase deploy --only functions -P staging",
     "logs": "firebase functions:log",
-    "set-admin": "node set-admin-claim.js"
+    "set-admin": "node set-admin-claim.js",
+    "migrate-data": "node migrate-data.js"
   },
   "engines": {
     "node": "20"
