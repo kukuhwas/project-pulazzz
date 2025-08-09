@@ -2,13 +2,13 @@
 
 const admin = require("firebase-admin");
 
-// --- BLOK 1: Untuk koneksi ke EMULATOR ---
-// Tidak perlu service account, akan otomatis terhubung jika env var di set
+// --- BLOK 2: Untuk koneksi ke database LIVE/PRODUKSI ---
+// Pastikan file 'service-account-key-production.json' ada di folder functions
+const serviceAccount = require("./service-account-key-production.json");
 admin.initializeApp({
-  projectId: "demo-project-pulazzz", // ID proyek fiktif untuk emulator
+  credential: admin.credential.cert(serviceAccount)
 });
-console.log("Menghubungkan ke EMULATOR...");
-// --- AKHIR BLOK 1 ---
+console.log("Menghubungkan ke database LIVE/PRODUKSI...");
 const db = admin.firestore();
 // --- AKHIR BLOK 2 ---
 
