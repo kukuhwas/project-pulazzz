@@ -38,7 +38,20 @@ const sendInvitation = onCall({ secrets: ["SENDGRID_API_KEY"] }, async (request)
             createdAt: FieldValue.serverTimestamp()
         });
         const referralCode = invitationRef.id;
-        const baseUrl = process.env.APP_URL || 'http://127.0.0.1:5002';
+
+        // --- Logika Pemilihan Base URL ---
+        let baseUrl;
+        const projectId = process.env.GCLOUD_PROJECT;
+        const isEmulated = process.env.FUNCTIONS_EMULATOR === 'true';
+
+        if (isEmulated) {
+            baseUrl = 'http://127.0.0.1:5002';
+        } else if (projectId === 'project-pulazzz-staging') {
+            baseUrl = 'https://project-pulazzz-staging.firebaseapp.com';
+        } else {
+            baseUrl = 'https://project-pulazzz.firebaseapp.com'; // Fallback ke produksi
+        }
+
         const signupLink = `${baseUrl}/signup.html?ref=${referralCode}`;
         const sgMail = require('@sendgrid/mail');
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
