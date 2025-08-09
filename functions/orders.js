@@ -6,47 +6,61 @@ const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 const db = getFirestore();
 
-// --- FUNGSI HELPER YANG DIPERBARUI ---
+// --- FUNGSI HELPER ---
 function formatIndonesianPhoneNumber(phoneNumber) {
     if (!phoneNumber || typeof phoneNumber !== 'string') return null;
-
     let cleaned = phoneNumber.replace(/\D/g, '');
-
-    if (cleaned.startsWith('62')) {
-        // Sudah benar
-    } else if (cleaned.startsWith('0')) {
-        cleaned = '62' + cleaned.substring(1);
-    } else if (cleaned.startsWith('8')) { // MENANGANI KASUS INI
-        cleaned = '62' + cleaned;
-    } else {
-        return null;
-    }
-
-    // Validasi panjang (11 s/d 15 digit totalnya)
-    if (cleaned.length >= 11 && cleaned.length <= 15) {
-        return cleaned;
-    }
-
+    if (cleaned.startsWith('62')) { }
+    else if (cleaned.startsWith('0')) { cleaned = '62' + cleaned.substring(1); }
+    else if (cleaned.startsWith('8')) { cleaned = '62' + cleaned; }
+    else { return null; }
+    if (cleaned.length >= 11 && cleaned.length <= 15) { return cleaned; }
     return null;
 }
 
-// --- FUNGSI TERKAIT PESANAN ---
+// --- FUNGSI PENDUKUNG ---
+const findProfileByPhone = onCall({ region: 'asia-southeast2' }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Anda harus login.');
+    }
+    const { phone } = request.data;
+    const formattedPhone = formatIndonesianPhoneNumber(phone);
+    if (!formattedPhone) {
+        return null;
+    }
+
+    const profilesQuery = db.collection('profiles').where('phone', '==', formattedPhone).limit(1);
+    const snapshot = await profilesQuery.get();
+
+    if (snapshot.empty) {
+        return null;
+    }
+
+    const profileData = snapshot.docs[0].data();
+    return {
+        profileId: snapshot.docs[0].id,
+        name: profileData.name,
+        address: profileData.address
+    };
+});
+
+
+// --- FUNGSI UTAMA PESANAN ---
 
 const createOrderAndProfile = onCall({ region: 'asia-southeast2' }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'Anda harus login untuk membuat pesanan.');
     }
 
-    const { customerInfo, shippingAddress, items, paymentMethod } = request.data;
+    const { customerInfo, shippingAddress, items, paymentMethod, updateProfile } = request.data;
     const creator = { uid: request.auth.uid, email: request.auth.token.email };
 
-    // Memanggil fungsi helper yang sudah diperbarui
     const formattedPhone = formatIndonesianPhoneNumber(customerInfo.phone);
     if (!formattedPhone) {
         throw new HttpsError('invalid-argument', 'Nomor telepon tidak valid.');
     }
 
-    const totalAmount = items.reduce((total, item) => total + (item.priceAtPurchase * item.quantity), 0);
+    const totalAmount = items.reduce((total, item) => total + (item.subtotal || 0), 0);
 
     const claims = request.auth.token;
     let representativeIdForOrder = null;
@@ -58,20 +72,13 @@ const createOrderAndProfile = onCall({ region: 'asia-southeast2' }, async (reque
 
     try {
         let orderIdToReturn = null;
-
         await db.runTransaction(async (transaction) => {
-            const phoneRef = db.collection('phoneNumbers').doc(formattedPhone);
             const profilesQuery = db.collection('profiles').where('phone', '==', formattedPhone).limit(1);
-
             const existingProfiles = await transaction.get(profilesQuery);
             let profileId;
 
             if (existingProfiles.empty) {
-                const phoneDoc = await transaction.get(phoneRef);
-                if (phoneDoc.exists) {
-                    throw new HttpsError('already-exists', 'Nomor telepon sudah terdaftar dengan profil lain.');
-                }
-
+                // Pelanggan baru, buat profil baru
                 const newProfileRef = db.collection('profiles').doc();
                 profileId = newProfileRef.id;
 
@@ -79,28 +86,28 @@ const createOrderAndProfile = onCall({ region: 'asia-southeast2' }, async (reque
                     name: customerInfo.name,
                     phone: formattedPhone,
                     address: shippingAddress.fullAddress,
+                    district: shippingAddress.district,
+                    city: shippingAddress.city,
+                    province: shippingAddress.province,
                     representativeId: representativeIdForOrder,
-                    createdAt: FieldValue.serverTimestamp()
+                    createdAt: FieldValue.serverTimestamp(),
+                    accountType: 'customer'
                 };
-
                 transaction.set(newProfileRef, newProfileData);
-                transaction.set(phoneRef, { profileId: profileId });
-
             } else {
+                // Pelanggan lama ditemukan
                 const profileDoc = existingProfiles.docs[0];
                 profileId = profileDoc.id;
-                const existingProfileRef = profileDoc.ref;
 
-                const profileDataToUpdate = {};
-                if (profileDoc.data().name !== customerInfo.name) {
-                    profileDataToUpdate.name = customerInfo.name;
-                }
-                if (profileDoc.data().address !== shippingAddress.fullAddress) {
-                    profileDataToUpdate.address = shippingAddress.fullAddress;
-                }
-
-                if (Object.keys(profileDataToUpdate).length > 0) {
-                    transaction.update(existingProfileRef, profileDataToUpdate);
+                if (updateProfile) {
+                    const profileDataToUpdate = {
+                        name: customerInfo.name,
+                        address: shippingAddress.fullAddress,
+                        district: shippingAddress.district,
+                        city: shippingAddress.city,
+                        province: shippingAddress.province,
+                    };
+                    transaction.update(profileDoc.ref, profileDataToUpdate);
                 }
             }
 
@@ -152,21 +159,16 @@ const generateDisplayId = onDocumentCreated({ region: 'asia-southeast2', documen
         if (counterDoc.exists) {
             newCount = counterDoc.data().count + 1;
         }
-
         const formattedCount = String(newCount).padStart(3, '0');
         const displayId = `PO-${displayDate}-${formattedCount}`;
-
         transaction.set(counterRef, { count: newCount });
-        transaction.update(orderRef, {
-            displayId: displayId
-        });
-
-        console.log(`Generated displayId: ${displayId} for order: ${event.params.orderId}`);
+        transaction.update(orderRef, { displayId: displayId });
         return displayId;
     });
 });
 
 module.exports = {
+    findProfileByPhone,
     createOrderAndProfile,
     generateDisplayId
 };

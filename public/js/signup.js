@@ -21,11 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const hiddenCityInput = document.getElementById('signup-address-city');
     const hiddenDistrictInput = document.getElementById('signup-address-district');
 
-    // Ambil kode referal dari URL
     const params = new URLSearchParams(window.location.search);
     const referralCode = params.get('ref');
 
-    // PERUBAHAN: Referensi fungsi baru
     const completeSignup = httpsCallable(functions, 'completeSignup');
     const searchAddress = httpsCallable(functions, 'searchAddress');
     const getInvitationDetails = httpsCallable(functions, 'getInvitationDetails');
@@ -61,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // PERUBAHAN: Fungsi baru untuk memvalidasi kode & mengisi form
     async function verifyAndPopulateForm() {
         if (!referralCode) {
             loadingIndicator.classList.add('d-none');
@@ -69,12 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
             errorMessageDiv.textContent = 'Kode undangan tidak ditemukan. Pastikan Anda menggunakan link yang benar.';
             return;
         }
-
         try {
             const result = await getInvitationDetails({ referralCode });
-            emailInput.value = result.data.email; // Isi email di sini
-
-            // Tampilkan form setelah validasi berhasil
+            emailInput.value = result.data.email;
             loadingIndicator.classList.add('d-none');
             signupForm.classList.remove('d-none');
             initializeAddressSearch();
@@ -86,7 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Panggil fungsi verifikasi saat halaman dimuat
     verifyAndPopulateForm();
 
     signupForm.addEventListener('submit', async (event) => {
@@ -105,14 +98,19 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Mendaftar...`;
 
         try {
-            const fullAddress = `${streetInput.value}, ${hiddenDistrictInput.value}, ${hiddenCityInput.value}, ${hiddenProvinceInput.value}`;
             const payload = {
-                referralCode,
+                referralCode: referralCode,
                 password: passwordInput.value,
                 name: nameInput.value,
                 phone: phoneInput.value,
-                address: fullAddress,
+                address: streetInput.value,
+                district: hiddenDistrictInput.value,
+                city: hiddenCityInput.value,
+                province: hiddenProvinceInput.value,
             };
+
+            // TAMBAHKAN BARIS INI UNTUK DEBUGGING
+            console.log('Data yang akan dikirim:', payload);
 
             await completeSignup(payload);
             await Swal.fire({

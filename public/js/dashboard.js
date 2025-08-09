@@ -45,34 +45,63 @@ const getStatusBadge = (status) => {
     return `<span class="badge ${statusInfo.class}">${statusInfo.text}</span>`;
 };
 
+
+// =================================================================
+// --- PERUBAHAN DI SINI: Tombol Aksi Menjadi Dropdown ---
+// Fungsi ini diubah dari menampilkan beberapa tombol sejajar
+// menjadi satu tombol dropdown "Tindakan" untuk menghemat ruang
+// dan menyembunyikan opsi "Batalkan Pesanan" jika tidak lagi tersedia.
+// =================================================================
 function getActionButtons(order) {
     const { status, displayId, id: docId } = order;
-    let primaryButton = '';
+    let primaryActionText = '';
+    let primaryActionStatus = '';
     const isCancelable = status === 'new_order';
-
-    const cancelButton = `
-        <button class="btn btn-outline-danger btn-sm action-btn ${!isCancelable ? 'is-disabled' : ''}" 
-                data-id="${docId}" 
-                data-display-id="${displayId}" 
-                data-next-status="cancelled" 
-                title="Batalkan Pesanan">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16"><path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m3.5-.029h.001l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm3.5.029l-.5 8.5a.5.5 0 1 0 .998.06l.5-8.5a.5.5 0 1 0-.998.06Z"/></svg>
-        </button>`;
 
     switch (status) {
         case 'new_order':
-            primaryButton = `<button class="btn btn-primary btn-sm action-btn me-2" data-id="${docId}" data-display-id="${displayId}" data-next-status="in_production">Mulai Produksi</button>`;
+            primaryActionText = 'Mulai Produksi';
+            primaryActionStatus = 'in_production';
             break;
         case 'in_production':
-            primaryButton = `<button class="btn btn-info btn-sm action-btn me-2" data-id="${docId}" data-display-id="${displayId}" data-next-status="shipped">Kirim Pesanan</button>`;
+            primaryActionText = 'Kirim Pesanan';
+            primaryActionStatus = 'shipped';
             break;
         case 'shipped':
-            primaryButton = `<button class="btn btn-success btn-sm action-btn me-2" data-id="${docId}" data-display-id="${displayId}" data-next-status="completed">Selesaikan Pesanan</button>`;
+            primaryActionText = 'Selesaikan Pesanan';
+            primaryActionStatus = 'completed';
             break;
         default:
             return `<p class="text-muted mb-0">Status Final</p>`;
     }
-    return `<div class="btn-group" role="group">${primaryButton}${cancelButton}</div>`;
+
+    const primaryActionItem = `
+        <li>
+            <button class="dropdown-item action-btn" data-id="${docId}" data-display-id="${displayId}" data-next-status="${primaryActionStatus}">
+                ${primaryActionText}
+            </button>
+        </li>`;
+
+    const cancelActionItem = isCancelable ? `
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <button class="dropdown-item text-danger action-btn" data-id="${docId}" data-display-id="${displayId}" data-next-status="cancelled">
+                Batalkan Pesanan
+            </button>
+        </li>
+    ` : '';
+
+    return `
+        <div class="dropdown">
+            <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Tindakan
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                ${primaryActionItem}
+                ${cancelActionItem}
+            </ul>
+        </div>
+    `;
 }
 
 // --- Logika Utama ---
@@ -121,7 +150,7 @@ async function fetchAndDisplayOrders(isInitialLoad, statusFilter = 'all', userPr
                 const order = { id: docSnap.id, ...docSnap.data() };
                 let itemsSummaryHtml = '<ul class="list-unstyled order-summary-list">';
                 (order.items || []).forEach(item => {
-                    itemsSummaryHtml += `<li>- ${item.quantity}x ${item.type} ${item.size} (${item.thickness} cm)`;
+                    itemsSummaryHtml += `<li>- ${item.quantity}x ${item.type} (${item.size}, ${item.thickness} cm)</li>`;
                 });
                 itemsSummaryHtml += '</ul>';
 
@@ -148,7 +177,10 @@ async function fetchAndDisplayOrders(isInitialLoad, statusFilter = 'all', userPr
                             <div class="col-12">${itemsSummaryHtml}</div>
                         </div>
                     </div>
-                    <div class="card-footer d-flex justify-content-end align-items-center">
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <p class="mb-0 text-muted small text-truncate" title="${order.shippingAddress.city}, ${order.shippingAddress.province}">
+                            📍 ${order.shippingAddress.city}, ${order.shippingAddress.province}
+                        </p>
                         <div class="action-buttons">
                             ${(userProfile.role === 'admin' || userProfile.role === 'produksi') ? getActionButtons(order) : ''}
                         </div>
@@ -202,12 +234,19 @@ const observer = new IntersectionObserver((entries) => {
 
 observer.observe(loadMoreTrigger);
 
+// =================================================================
+// --- PERUBAHAN DI SINI: Event Listener untuk Klik Kartu ---
+// =================================================================
 ordersContainer.addEventListener('click', (event) => {
     const targetElement = event.target;
+
+    // Cari elemen terdekat yang relevan dari target klik
     const actionButton = targetElement.closest('.action-btn');
+    const footer = targetElement.closest('.card-footer');
     const card = targetElement.closest('.dashboard-card');
 
     if (actionButton) {
+        // Jika yang diklik adalah tombol aksi di dalam dropdown, jalankan logika modal
         if (!actionButton.classList.contains('is-disabled')) {
             const { id: docId, displayId, nextStatus } = actionButton.dataset;
             const nextStatusText = statuses[nextStatus] || nextStatus;
@@ -222,9 +261,12 @@ ordersContainer.addEventListener('click', (event) => {
             confirmStatusChangeBtn.dataset.expectedId = displayId;
             statusChangeModal.show();
         }
-    } else if (card) {
+    } else if (card && !footer) {
+        // Jika yang diklik adalah kartu, TETAPI BUKAN footer,
+        // maka arahkan ke halaman konfirmasi.
         window.location.href = `konfirmasi.html?order_id=${card.dataset.id}`;
     }
+    // Jika yang diklik adalah area footer tapi bukan tombol aksi, tidak terjadi apa-apa.
 });
 
 modalConfirmInput.addEventListener('input', () => {
@@ -249,7 +291,7 @@ confirmStatusChangeBtn.addEventListener('click', async (event) => {
     try {
         if (nextStatus === 'cancelled') {
             const orderRef = doc(db, 'orders', docId);
-            const orderSnap = await getDoc(orderRef); 
+            const orderSnap = await getDoc(orderRef);
             if (orderSnap.exists() && orderSnap.data().status !== 'new_order') {
                 statusChangeModal.hide();
                 alert('Validasi gagal: Pesanan ini tidak lagi berstatus "Pesanan Baru" dan tidak dapat dibatalkan.');

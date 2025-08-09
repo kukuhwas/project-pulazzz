@@ -17,7 +17,7 @@ const createLoggedInNavContent = (user, role) => {
                 <span class="d-none d-sm-inline">Order System</span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
-                <i class="bi bi-caret-down"></i>
+                <i class="bi bi-caret-down-fill"></i>
             </button>
             <div class="collapse navbar-collapse" id="mainNavbar">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
@@ -66,6 +66,25 @@ onAuthStateChanged(auth, async (user) => {
                 signOut(auth).then(() => { window.location.href = '/login.html'; });
             });
         }
+        
+        // --- PERUBAHAN 2: Tambahkan event listener untuk mengubah ikon saat menu dibuka/tutup ---
+        const mainNavbar = document.getElementById('mainNavbar');
+        if (mainNavbar) {
+            const togglerIcon = document.querySelector('.navbar-toggler i');
+
+            // Saat menu akan ditampilkan
+            mainNavbar.addEventListener('show.bs.collapse', () => {
+                togglerIcon.classList.remove('bi-caret-down-fill');
+                togglerIcon.classList.add('bi-caret-up-fill');
+            });
+
+            // Saat menu akan disembunyikan
+            mainNavbar.addEventListener('hide.bs.collapse', () => {
+                togglerIcon.classList.remove('bi-caret-up-fill');
+                togglerIcon.classList.add('bi-caret-down-fill');
+            });
+        }
+
     } else {
         navElement.innerHTML = createLoggedOutNavContent();
     }

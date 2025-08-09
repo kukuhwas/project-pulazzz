@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     representativeInfoEl.style.display = 'block';
                     const repRef = doc(db, 'profiles', profileData.representativeId);
                     const repSnap = await getDoc(repRef);
-                    representativeView.textContent = repSnap.exists() ? (repSnap.data().name || repSnap.data().email) : 'Data atasan tidak ditemukan.';
+                    representativeView.textContent = repSnap.exists() ? (repSnap.data().name || repSnap.data().email) : 'Data representatif tidak ditemukan.';
                 } else {
                     representativeInfoEl.style.display = 'none';
                 }

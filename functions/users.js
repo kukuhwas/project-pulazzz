@@ -6,7 +6,6 @@ const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 const db = getFirestore();
 
-// --- FUNGSI HELPER ---
 function formatIndonesianPhoneNumber(phoneNumber) {
     if (!phoneNumber || typeof phoneNumber !== 'string') return null;
     let cleaned = phoneNumber.replace(/\D/g, '');
@@ -18,7 +17,20 @@ function formatIndonesianPhoneNumber(phoneNumber) {
     return null;
 }
 
-// --- FUNGSI SIGNUP & UNDANGAN ---
+const getInvitationDetails = onCall({ region: 'asia-southeast2' }, async (request) => {
+    const { referralCode } = request.data;
+    if (!referralCode) {
+        throw new HttpsError('invalid-argument', 'Kode undangan tidak disediakan.');
+    }
+    const invitationRef = db.collection('invitations').doc(referralCode);
+    const invitationDoc = await invitationRef.get();
+    if (!invitationDoc.exists || invitationDoc.data().status !== 'pending') {
+        throw new HttpsError('not-found', 'Kode undangan tidak valid atau sudah digunakan.');
+    }
+    return {
+        email: invitationDoc.data().inviteeEmail
+    };
+});
 
 const sendInvitation = onCall({ region: 'asia-southeast2', secrets: ["SENDGRID_API_KEY"] }, async (request) => {
     if (!request.auth) {
@@ -44,7 +56,7 @@ const sendInvitation = onCall({ region: 'asia-southeast2', secrets: ["SENDGRID_A
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
         const msg = {
             to: inviteeEmail,
-            from: 'noreply@lokataraindustry.com',
+            from: 'noreply@lokataraindustry.com', // Ganti dengan email pengirim Anda
             subject: `Anda Diundang untuk Bergabung dengan Sistem Order Pulazzz`,
             html: `<p>Anda telah diundang oleh <strong>${inviter.email}</strong> untuk bergabung. Silakan klik link di bawah untuk mendaftar:</p><a href="${signupLink}">Selesaikan Pendaftaran</a>`,
         };
@@ -57,53 +69,70 @@ const sendInvitation = onCall({ region: 'asia-southeast2', secrets: ["SENDGRID_A
 });
 
 const completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => {
-    const { referralCode, password, name, phone, address } = request.data;
-    if (!referralCode || !password || !name || !phone || !address) {
+    const { referralCode, password, name, phone, address, district, city, province } = request.data;
+    if (!referralCode || !password || !name || !phone || !address || !district || !city || !province) {
         throw new HttpsError('invalid-argument', 'Data pendaftaran tidak lengkap.');
     }
+
     const invitationRef = db.collection('invitations').doc(referralCode);
+
     return db.runTransaction(async (transaction) => {
         const invitationDoc = await transaction.get(invitationRef);
         if (!invitationDoc.exists || invitationDoc.data().status !== 'pending') {
             throw new HttpsError('not-found', 'Kode undangan tidak valid atau sudah digunakan.');
         }
+
         const invitationData = invitationDoc.data();
+
+        // Logika baru untuk mencari kepala representatif secara berantai
+        const inviterUser = await admin.auth().getUser(invitationData.inviterUid);
+        const inviterClaims = inviterUser.customClaims || {};
+        let headRepresentativeId = null;
+
+        if (inviterClaims.role === 'representatif') {
+            headRepresentativeId = invitationData.inviterUid;
+        } else if (inviterClaims.role === 'reseller' && inviterClaims.representativeId) {
+            headRepresentativeId = inviterClaims.representativeId;
+        }
+
         const userRecord = await admin.auth().createUser({
             email: invitationData.inviteeEmail,
             password: password,
             displayName: name,
         });
 
-
         await admin.auth().setCustomUserClaims(userRecord.uid, {
             role: 'reseller',
-            representativeId: invitationData.inviterUid
+            representativeId: headRepresentativeId
         });
 
         const profileRef = db.collection('profiles').doc(userRecord.uid);
+
         transaction.set(profileRef, {
             name: name,
             phone: formatIndonesianPhoneNumber(phone),
             address: address,
+            district: district,
+            city: city,
+            province: province,
             email: invitationData.inviteeEmail,
             role: 'reseller',
             referralId: invitationData.inviterUid,
-            representativeId: invitationData.inviterUid,
+            representativeId: headRepresentativeId,
             createdAt: FieldValue.serverTimestamp(),
             accountType: 'user'
         });
+
         transaction.update(invitationRef, { status: 'completed', completedAt: FieldValue.serverTimestamp() });
         return { success: true, message: 'Pendaftaran berhasil!' };
     });
 });
 
-// --- FUNGSI MANAJEMEN PENGGUNA ---
-
 const updateUserProfile = onCall({ region: 'asia-southeast2' }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'Anda harus login untuk memperbarui profil.');
     }
-    const { name, phone, address } = request.data;
+    const { name, phone, address, district, city, province } = request.data;
     const uid = request.auth.uid;
     if (!name || !phone || !address) {
         throw new HttpsError('invalid-argument', 'Nama, telepon, dan alamat tidak boleh kosong.');
@@ -114,26 +143,8 @@ const updateUserProfile = onCall({ region: 'asia-southeast2' }, async (request) 
     }
     const profileRef = db.collection('profiles').doc(uid);
     try {
-        await db.runTransaction(async (transaction) => {
-            const profileDoc = await transaction.get(profileRef);
-            if (!profileDoc.exists) {
-                throw new HttpsError('not-found', 'Profil pengguna tidak ditemukan.');
-            }
-            const oldData = profileDoc.data();
-            const oldPhone = oldData.phone;
-            if (formattedPhone !== oldPhone) {
-                const newPhoneRef = db.collection('phoneNumbers').doc(formattedPhone);
-                const phoneDoc = await transaction.get(newPhoneRef);
-                if (phoneDoc.exists) {
-                    throw new HttpsError('already-exists', 'Nomor telepon baru sudah digunakan oleh profil lain.');
-                }
-                const oldPhoneRef = db.collection('phoneNumbers').doc(oldPhone);
-                transaction.delete(oldPhoneRef);
-                transaction.set(newPhoneRef, { profileId: uid });
-            }
-            const dataToUpdate = { name, phone: formattedPhone, address };
-            transaction.update(profileRef, dataToUpdate);
-        });
+        const dataToUpdate = { name, phone: formattedPhone, address, district, city, province };
+        await profileRef.update(dataToUpdate);
         return { success: true, message: 'Profil berhasil diperbarui.' };
     } catch (error) {
         console.error("Gagal memperbarui profil:", error);
@@ -147,8 +158,6 @@ const setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa mengubah peran pengguna.');
     }
     const { email, role, representativeId } = request.data;
-
-
     const validRoles = ['reseller', 'produksi', 'admin', 'representatif'];
     if (!email || !role || !validRoles.includes(role)) {
         throw new HttpsError('invalid-argument', 'Email atau peran tidak valid.');
@@ -156,10 +165,12 @@ const setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
     try {
         const user = await admin.auth().getUserByEmail(email);
         const claims = { role: role };
-
         claims.representativeId = (role === 'reseller' && representativeId) ? representativeId : null;
-
         await admin.auth().setCustomUserClaims(user.uid, claims);
+
+        const profileRef = db.collection('profiles').doc(user.uid);
+        await profileRef.update({ role: role, representativeId: claims.representativeId });
+
         return { success: true, message: `Berhasil menjadikan ${email} sebagai ${role}.` };
     } catch (error) {
         console.error("Gagal mengatur peran:", error);
@@ -189,21 +200,27 @@ const createNewUser = onCall({ region: 'asia-southeast2' }, async (request) => {
     if (request.auth.token.role !== 'admin') {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa membuat pengguna baru.');
     }
-    const { email, password, role, representativeId } = request.data;
-
-
+    const { email, password, role, representativeId, name } = request.data;
     const validRoles = ['reseller', 'produksi', 'admin', 'representatif'];
-    if (!email || !password || !role || !validRoles.includes(role)) {
+    if (!email || !password || !role || !validRoles.includes(role) || !name) {
         throw new HttpsError('invalid-argument', 'Input tidak valid.');
     }
     try {
-        const userRecord = await admin.auth().createUser({ email, password });
+        const userRecord = await admin.auth().createUser({ email, password, displayName: name });
         const claims = { role: role };
-
-
         claims.representativeId = (role === 'reseller' && representativeId) ? representativeId : null;
-
         await admin.auth().setCustomUserClaims(userRecord.uid, claims);
+
+        const profileRef = db.collection('profiles').doc(userRecord.uid);
+        await profileRef.set({
+            name: name,
+            email: email,
+            role: role,
+            representativeId: claims.representativeId,
+            createdAt: FieldValue.serverTimestamp(),
+            accountType: 'user'
+        });
+
         return { success: true, message: `Berhasil membuat pengguna ${email} dengan peran ${role}.` };
     } catch (error) {
         console.error("Gagal membuat pengguna baru:", error);
@@ -217,54 +234,36 @@ const createNewUser = onCall({ region: 'asia-southeast2' }, async (request) => {
     }
 });
 
-const sendPasswordReset = onCall({ region: 'asia-southeast2' }, async (request) => {
+const deleteUserAndProfile = onCall({ region: 'asia-southeast2' }, async (request) => {
     if (request.auth.token.role !== 'admin') {
-        throw new HttpsError('permission-denied', 'Hanya admin yang bisa mengirim reset password.');
+        throw new HttpsError('permission-denied', 'Hanya admin yang bisa menghapus pengguna.');
     }
-    const { email } = request.data;
-    if (!email) {
-        throw new HttpsError('invalid-argument', 'Email wajib diisi.');
+    const { uid, email } = request.data;
+    if (!uid) {
+        throw new HttpsError('invalid-argument', 'UID pengguna wajib diisi.');
     }
     try {
-        const link = await admin.auth().generatePasswordResetLink(email);
-        console.log(`Link reset password untuk ${email} adalah: ${link}`);
-        return { success: true, message: `Link reset password berhasil dikirim ke ${email}.` };
+        await admin.auth().deleteUser(uid);
+        const profileRef = db.collection('profiles').doc(uid);
+        await profileRef.delete();
+        return { success: true, message: `Pengguna ${email} berhasil dihapus.` };
     } catch (error) {
-        console.error("Gagal mengirim link reset password:", error);
+        console.error("Gagal menghapus pengguna:", error);
         if (error.code === 'auth/user-not-found') {
-            throw new HttpsError('not-found', 'Pengguna dengan email tersebut tidak ditemukan.');
+            throw new HttpsError('not-found', 'Pengguna tidak ditemukan di Authentication.');
         }
-        throw new HttpsError('internal', 'Gagal mengirim link reset password.');
+        throw new HttpsError('internal', 'Gagal menghapus pengguna.');
     }
 });
 
-// Tambahkan fungsi ini di dalam functions/users.js
-
-const getInvitationDetails = onCall({ region: 'asia-southeast2' }, async (request) => {
-    const { referralCode } = request.data;
-    if (!referralCode) {
-        throw new HttpsError('invalid-argument', 'Kode undangan tidak disediakan.');
-    }
-
-    const invitationRef = db.collection('invitations').doc(referralCode);
-    const invitationDoc = await invitationRef.get();
-
-    if (!invitationDoc.exists || invitationDoc.data().status !== 'pending') {
-        throw new HttpsError('not-found', 'Kode undangan tidak valid atau sudah digunakan.');
-    }
-
-    return {
-        email: invitationDoc.data().inviteeEmail
-    };
-});
 
 module.exports = {
-    getInvitationDetails, // Tambahkan ini
+    getInvitationDetails,
     sendInvitation,
     completeSignup,
     updateUserProfile,
     setUserRole,
     listAllUsers,
     createNewUser,
-    sendPasswordReset
+    deleteUserAndProfile
 };

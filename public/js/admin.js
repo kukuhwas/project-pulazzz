@@ -19,12 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const listAllUsers = httpsCallable(functions, 'listAllUsers');
     const createNewUser = httpsCallable(functions, 'createNewUser');
     const setUserRole = httpsCallable(functions, 'setUserRole');
-    const sendPasswordReset = httpsCallable(functions, 'sendPasswordReset');
+    const deleteUserAndProfile = httpsCallable(functions, 'deleteUserAndProfile');
 
     function createUserCard(user, representatives) {
         const cardWrapper = document.createElement('div');
         cardWrapper.className = 'col-md-6 col-lg-4';
         cardWrapper.dataset.uid = user.uid;
+
         const roleBadges = {
             admin: 'bg-danger',
             reseller: 'bg-info text-dark',
@@ -57,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </select>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label-sm">Atasan (Rep.)</label>
+                        <label class="form-label-sm">Induk Representatif</label>
                         ${repSelectHTML}
                     </div>
                 </div>
@@ -66,8 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="btn btn-primary btn-sm save-role-btn" data-email="${user.email}" ${user.role === 'admin' ? 'disabled' : ''}>
                             <i class="bi bi-save"></i> Simpan
                         </button>
-                        <button class="btn btn-outline-secondary btn-sm reset-password-btn" data-email="${user.email}">
-                            <i class="bi bi-key"></i> Reset Pass
+                        <button class="btn btn-outline-danger btn-sm delete-user-btn" data-uid="${user.uid}" data-email="${user.email}" ${user.role === 'admin' ? 'disabled' : ''}>
+                            <i class="bi bi-trash3"></i> Hapus
                         </button>
                     </div>
                 </div>
@@ -183,32 +184,48 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        if (button.classList.contains('reset-password-btn')) {
-            const result = await Swal.fire({
-                title: 'Kirim Reset Password?',
-                text: `Link untuk mereset password akan dikirim ke ${email}.`,
+        if (button.classList.contains('delete-user-btn')) {
+            const { uid } = button.dataset;
+
+            Swal.fire({
+                title: `Hapus Pengguna ${email}?`,
+                html: `
+                    <p class="text-danger">Tindakan ini tidak dapat dibatalkan.</p>
+                    <p>Untuk mengonfirmasi, ketik ulang alamat email di bawah ini:</p>
+                    <input id="swal-email-confirm" class="swal2-input" placeholder="${email}">
+                `,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, kirim!',
-                cancelButtonText: 'Batal'
-            });
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#d33',
+                didOpen: () => {
+                    const confirmButton = Swal.getConfirmButton();
+                    const emailInput = document.getElementById('swal-email-confirm');
+                    confirmButton.disabled = true;
 
-            if (result.isConfirmed) {
-                button.disabled = true;
-                button.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Mengirim...`;
-                try {
-                    const res = await sendPasswordReset({ email });
-                    Swal.fire('Terkirim!', res.data.message, 'success');
-                } catch (error) {
-                    console.error("Gagal mengirim reset password:", error);
-                    Swal.fire('Gagal', error.message, 'error');
-                } finally {
-                    button.disabled = false;
-                    button.innerHTML = '<i class="bi bi-key"></i> Reset Pass';
+                    emailInput.addEventListener('input', () => {
+                        if (emailInput.value.toLowerCase() === email.toLowerCase()) {
+                            confirmButton.disabled = false;
+                        } else {
+                            confirmButton.disabled = true;
+                        }
+                    });
+                },
+                preConfirm: async () => {
+                    try {
+                        await deleteUserAndProfile({ uid, email });
+                        return { success: true };
+                    } catch (error) {
+                        Swal.showValidationMessage(`Gagal menghapus: ${error.message}`);
+                    }
                 }
-            }
+            }).then((result) => {
+                if (result.isConfirmed && result.value?.success) {
+                    Swal.fire('Terhapus!', `Pengguna ${email} telah dihapus.`, 'success');
+                    loadUserList();
+                }
+            });
         }
     });
 
@@ -222,5 +239,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-
 });
