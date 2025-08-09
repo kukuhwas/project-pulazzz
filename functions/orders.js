@@ -32,7 +32,7 @@ function formatIndonesianPhoneNumber(phoneNumber) {
 
 // --- FUNGSI TERKAIT PESANAN ---
 
-const createOrderAndProfile = onCall({ region: 'asia-southeast2' }, async (request) => {
+const createOrderAndProfile = onCall(async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'Anda harus login untuk membuat pesanan.');
     }
@@ -133,7 +133,7 @@ const createOrderAndProfile = onCall({ region: 'asia-southeast2' }, async (reque
     }
 });
 
-const generateDisplayId = onDocumentCreated({ region: 'asia-southeast2', document: "orders/{orderId}" }, async (event) => {
+const generateDisplayId = onDocumentCreated("orders/{orderId}", async (event) => {
     const orderRef = event.data.ref;
     const now = new Date();
     const timeZone = 'Asia/Jakarta';

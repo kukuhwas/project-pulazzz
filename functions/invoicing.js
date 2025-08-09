@@ -21,7 +21,7 @@ const fonts = {
     }
 };
 
-const generateInvoicePdf = onCall({ region: 'asia-southeast2' }, async (request) => {
+const generateInvoicePdf = onCall(async (request) => {
     const orderId = request.data.orderId;
     if (!orderId) {
         throw new HttpsError('invalid-argument', 'Fungsi harus dipanggil dengan "orderId".');

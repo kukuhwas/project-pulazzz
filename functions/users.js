@@ -20,7 +20,7 @@ function formatIndonesianPhoneNumber(phoneNumber) {
 
 // --- FUNGSI SIGNUP & UNDANGAN ---
 
-const sendInvitation = onCall({ region: 'asia-southeast2', secrets: ["SENDGRID_API_KEY"] }, async (request) => {
+const sendInvitation = onCall({ secrets: ["SENDGRID_API_KEY"] }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'Anda harus login untuk mengirim undangan.');
     }
@@ -56,7 +56,7 @@ const sendInvitation = onCall({ region: 'asia-southeast2', secrets: ["SENDGRID_A
     }
 });
 
-const completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => {
+const completeSignup = onCall(async (request) => {
     const { referralCode, password, name, phone, address } = request.data;
     if (!referralCode || !password || !name || !phone || !address) {
         throw new HttpsError('invalid-argument', 'Data pendaftaran tidak lengkap.');
@@ -99,7 +99,7 @@ const completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => 
 
 // --- FUNGSI MANAJEMEN PENGGUNA ---
 
-const updateUserProfile = onCall({ region: 'asia-southeast2' }, async (request) => {
+const updateUserProfile = onCall(async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'Anda harus login untuk memperbarui profil.');
     }
@@ -142,7 +142,7 @@ const updateUserProfile = onCall({ region: 'asia-southeast2' }, async (request) 
     }
 });
 
-const setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
+const setUserRole = onCall(async (request) => {
     if (request.auth.token.role !== 'admin') {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa mengubah peran pengguna.');
     }
@@ -167,7 +167,7 @@ const setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
     }
 });
 
-const listAllUsers = onCall({ region: 'asia-southeast2' }, async (request) => {
+const listAllUsers = onCall(async (request) => {
     if (request.auth.token.role !== 'admin') {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa melihat daftar pengguna.');
     }
@@ -185,7 +185,7 @@ const listAllUsers = onCall({ region: 'asia-southeast2' }, async (request) => {
     }
 });
 
-const createNewUser = onCall({ region: 'asia-southeast2' }, async (request) => {
+const createNewUser = onCall(async (request) => {
     if (request.auth.token.role !== 'admin') {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa membuat pengguna baru.');
     }
@@ -217,7 +217,7 @@ const createNewUser = onCall({ region: 'asia-southeast2' }, async (request) => {
     }
 });
 
-const sendPasswordReset = onCall({ region: 'asia-southeast2' }, async (request) => {
+const sendPasswordReset = onCall(async (request) => {
     if (request.auth.token.role !== 'admin') {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa mengirim reset password.');
     }
@@ -240,7 +240,7 @@ const sendPasswordReset = onCall({ region: 'asia-southeast2' }, async (request) 
 
 // Tambahkan fungsi ini di dalam functions/users.js
 
-const getInvitationDetails = onCall({ region: 'asia-southeast2' }, async (request) => {
+const getInvitationDetails = onCall(async (request) => {
     const { referralCode } = request.data;
     if (!referralCode) {
         throw new HttpsError('invalid-argument', 'Kode undangan tidak disediakan.');

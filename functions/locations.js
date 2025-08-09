@@ -9,7 +9,7 @@ const db = getFirestore();
  * Melakukan pencarian alamat berdasarkan query.
  * Memprioritaskan pencarian kota, lalu kecamatan.
  */
-const searchAddress = onCall({ region: 'asia-southeast2' }, async (request) => {
+const searchAddress = onCall(async (request) => {
     const queryText = request.data.query;
     if (!queryText || queryText.length < 3) {
         return [];

@@ -1,6 +1,10 @@
 // functions/index.js
 
 const admin = require("firebase-admin");
+const { setGlobalOptions } = require("firebase-functions/v2/options");
+
+// Menetapkan region global untuk semua fungsi
+setGlobalOptions({ region: "asia-southeast2" });
 
 // Inisialisasi Firebase Admin SDK sekali di file utama
 admin.initializeApp();
