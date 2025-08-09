@@ -6,7 +6,10 @@
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "deploy:staging": "firebase deploy --only functions -P staging",
+    "logs": "firebase functions:log",
+    "set-admin": "node set-admin-claim.js",
+    "migrate-data": "node migrate-data.js"
   },
   "engines": {
     "node": "20"

@@ -5,8 +5,8 @@ import { initializeFirestore, memoryLocalCache, connectFirestoreEmulator } from 
 import { getFunctions, connectFunctionsEmulator } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 import { getAuth, connectAuthEmulator } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 
-// Konfigurasi Firebase untuk aplikasi web Anda
-const firebaseConfig = {
+// Konfigurasi Firebase untuk lingkungan yang berbeda
+const productionConfig = {
   apiKey: "AIzaSyDs4aOD0y4BSN67GCd-6RrksbOPfED6V_g",
   authDomain: "project-pulazzz.firebaseapp.com",
   projectId: "project-pulazzz",
@@ -14,6 +14,22 @@ const firebaseConfig = {
   messagingSenderId: "502938566803",
   appId: "1:502938566803:web:3213e37504abd88627cd66"
 };
+
+const stagingConfig = {
+  apiKey: "AIzaSyDhVWBwrhghoD0fVcnrLL2pqiiL2QarFX4",
+  authDomain: "project-pulazzz-staging-5b316.firebaseapp.com",
+  projectId: "project-pulazzz-staging-5b316",
+  storageBucket: "project-pulazzz-staging-5b316.firebasestorage.app",
+  messagingSenderId: "716438943278",
+  appId: "1:716438943278:web:7a86c5fbdd6fd23f6891bf"
+};
+
+// Pilih konfigurasi berdasarkan hostname
+const currentHostname = window.location.hostname;
+const stagingHostnames = ["project-pulazzz-staging-5b316.firebaseapp.com", "project-pulazzz-staging-5b316.web.app"];
+const isStaging = stagingHostnames.includes(currentHostname);
+
+const firebaseConfig = isStaging ? stagingConfig : productionConfig;
 
 // Inisialisasi Firebase App
 const app = initializeApp(firebaseConfig);
