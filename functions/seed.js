@@ -2,15 +2,32 @@
 
 const admin = require("firebase-admin");
 
-// --- BLOK 2: Untuk koneksi ke database LIVE/PRODUKSI ---
-// Pastikan file 'service-account-key-production.json' ada di folder functions
-const serviceAccount = require("./service-account-key-production.json");
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-console.log("Menghubungkan ke database LIVE/PRODUKSI...");
+// Cek apakah kita berada di lingkungan emulator
+if (process.env.FIRESTORE_EMULATOR_HOST) {
+  // --- BLOK 1: Untuk koneksi ke EMULATOR ---
+  console.log("Menghubungkan ke EMULATOR Firestore...");
+  admin.initializeApp({
+    projectId: "pulazzz-dev", // Gunakan project ID dummy untuk emulator
+  });
+  // --- AKHIR BLOK 1 ---
+} else {
+  // --- BLOK 2: Untuk koneksi ke database LIVE/PRODUKSI ---
+  // Pastikan file 'service-account-key-production.json' ada di folder functions
+  try {
+    const serviceAccount = require("./service-account-key-production.json");
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    console.log("Menghubungkan ke database LIVE/PRODUKSI...");
+  } catch (error) {
+    console.error("Gagal memuat service-account-key-production.json. Pastikan file ada dan benar.");
+    console.error("Script ini tidak boleh dijalankan di lingkungan produksi tanpa kunci layanan.");
+    process.exit(1);
+  }
+  // --- AKHIR BLOK 2 ---
+}
+
 const db = admin.firestore();
-// --- AKHIR BLOK 2 ---
 
 
 // --- DATA PRODUK BARU DENGAN STRUKTUR FINAL ---
