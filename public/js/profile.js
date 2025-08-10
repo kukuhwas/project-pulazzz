@@ -63,15 +63,22 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelEditBtn.classList.toggle('d-none', !isEditing);
     }
 
-    /**
-     * Secara rekursif merender struktur pohon menjadi HTML.
-     * Handles both tree (for reps) and flat list (for resellers).
-     */
+    function buildTree(users) {
+        const nodes = {};
+        users.forEach(user => {
+            nodes[user.uid] = { ...user, children: [] };
+        });
+        Object.values(nodes).forEach(node => {
+            if (node.referralId && nodes[node.referralId]) {
+                nodes[node.referralId].children.push(node);
+            }
+        });
+        return nodes;
+    }
+
     function renderHierarchyTree(nodes, isTopLevel = true) {
         if (!nodes || nodes.length === 0) return '';
 
-        // For resellers, the data is a flat list. For reps, it's a tree.
-        // The `isTopLevel` check helps us decide whether to wrap in the main `user-tree` class.
         let html = isTopLevel ? '<ul class="user-tree">' : '<ul>';
 
         nodes.forEach(node => {
@@ -79,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const userName = node.role === 'representatif' ? `<strong>${node.name}</strong>` : node.name;
             const isCurrentUser = node.uid === currentUser.uid;
 
-            // Don't show the collapse icon for the top-level representative themselves
             const isCollapsible = hasChildren && !isCurrentUser;
 
             html += `<li data-uid="${node.uid}" class="${isCollapsible ? 'expanded' : ''}">`;
@@ -89,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 html += '<i class="bi bi-caret-down-fill me-1"></i>';
             }
 
-            // Add a 'You' badge for the current user in the hierarchy
             if(isCurrentUser) {
                 html += `${userName} <span class="badge bg-primary">Anda</span>`;
             } else {
@@ -98,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
             html += '</span>';
 
             if (hasChildren) {
-                // Pass false for isTopLevel in recursive calls
                 html += renderHierarchyTree(node.children, false);
             }
             html += '</li>';
@@ -115,23 +119,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         hierarchySection.classList.remove('d-none');
-        hierarchyTreeContainer.innerHTML = '<p>Menjalankan tes diagnosis langkah 2...</p>';
+        hierarchyTreeContainer.innerHTML = `<div class="text-center"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Memuat hierarki...</p></div>`;
 
         try {
             const result = await getUserHierarchy();
             const data = result.data;
 
-            console.log("Debug step 2: Data diterima dari server:", data);
-
-            if (Array.isArray(data)) {
-                hierarchyTreeContainer.innerHTML = `<p class="text-success">Tes diagnosis langkah 2 berhasil! Menerima ${data.length} data pengguna. Silakan periksa konsol untuk melihat datanya.</p>`;
-            } else {
-                 hierarchyTreeContainer.innerHTML = `<p class="text-warning">Tes diagnosis langkah 2: Data yang diterima bukan array. Lihat konsol.</p>`;
+            if (!data || data.length === 0) {
+                hierarchyTreeContainer.innerHTML = '<p class="text-muted">Tidak ada pengguna dalam hierarki Anda.</p>';
+                return;
             }
 
+            let treeHtml = '';
+            if (userRole === 'representatif') {
+                const allNodes = buildTree(data); // data is all users
+                const repNode = allNodes[currentUser.uid];
+                if (repNode) {
+                    treeHtml = renderHierarchyTree([repNode]);
+                } else {
+                    treeHtml = '<p class="text-muted">Tidak dapat menemukan data Anda dalam hierarki.</p>';
+                }
+            } else { // Reseller
+                // data is a flat list of direct children, render it directly
+                treeHtml = renderHierarchyTree(data);
+            }
+
+            hierarchyTreeContainer.innerHTML = treeHtml;
+
         } catch (error) {
-            console.error("Gagal memuat hierarki (debug step 2):", error);
-            hierarchyTreeContainer.innerHTML = '<p class="text-danger">Gagal pada tes diagnosis langkah 2.</p>';
+            console.error("Gagal memuat hierarki:", error);
+            hierarchyTreeContainer.innerHTML = '<p class="text-danger">Gagal memuat hierarki pengguna.</p>';
         }
     }
 

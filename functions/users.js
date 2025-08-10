@@ -279,14 +279,40 @@ const getUserHierarchy = onCall({ region: 'asia-southeast2' }, async (request) =
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'Anda harus login untuk melihat data ini.');
     }
+
+    const uid = request.auth.uid;
+    const profileRef = db.collection('profiles').doc(uid);
+    const profileSnap = await profileRef.get();
+
+    if (!profileSnap.exists()) {
+        throw new HttpsError('not-found', 'Profil pengguna tidak ditemukan.');
+    }
+
+    const userProfile = profileSnap.data();
+    const userRole = userProfile.role;
+
     try {
-        // DEBUG STEP 2: Return the flat list of all users to test serialization.
-        const allProfilesSnap = await db.collection('profiles').get();
-        const allUsers = allProfilesSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
-        return allUsers;
+        if (userRole === 'reseller') {
+            // Use the efficient query for resellers.
+            const snapshot = await db.collection('profiles').where('referralId', '==', uid).get();
+            if (snapshot.empty) {
+                return [];
+            }
+            const invitees = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+            return invitees;
+
+        } else if (userRole === 'representatif') {
+            // Return the entire flat list and let the client build the tree.
+            const allProfilesSnap = await db.collection('profiles').get();
+            const allUsers = allProfilesSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+            return allUsers;
+        }
+
+        return []; // For other roles
+
     } catch (error) {
-        console.error("Gagal mengambil hierarki pengguna (debug step 2):", error);
-        throw new HttpsError('internal', 'Gagal memproses permintaan hierarki pengguna (debug step 2).');
+        console.error("Gagal mengambil hierarki pengguna:", error);
+        throw new HttpsError('internal', 'Gagal memproses permintaan hierarki pengguna.');
     }
 });
 
