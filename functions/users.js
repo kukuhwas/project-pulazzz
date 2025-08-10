@@ -275,6 +275,60 @@ const deleteUserAndProfile = onCall({ region: 'asia-southeast2' }, async (reques
 });
 
 
+const getUserHierarchy = onCall({ region: 'asia-southeast2' }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Anda harus login untuk melihat data ini.');
+    }
+
+    const uid = request.auth.uid;
+    const profileRef = db.collection('profiles').doc(uid);
+    const profileSnap = await profileRef.get();
+
+    if (!profileSnap.exists()) {
+        throw new HttpsError('not-found', 'Profil pengguna tidak ditemukan.');
+    }
+
+    const userProfile = profileSnap.data();
+    const userRole = userProfile.role;
+
+    try {
+        if (userRole === 'reseller') {
+            const snapshot = await db.collection('profiles').where('referralId', '==', uid).get();
+            if (snapshot.empty) {
+                return [];
+            }
+            const invitees = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+            return invitees;
+
+        } else if (userRole === 'representatif') {
+            const allProfilesSnap = await db.collection('profiles').get();
+            const allUsers = allProfilesSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+
+            const nodes = {};
+            allUsers.forEach(user => {
+                nodes[user.uid] = { ...user, children: [] };
+            });
+
+            Object.values(nodes).forEach(node => {
+                if (node.referralId && nodes[node.referralId]) {
+                    nodes[node.referralId].children.push(node);
+                }
+            });
+
+            // Return the subtree of the current representative
+            return nodes[uid] ? [nodes[uid]] : [];
+        }
+
+        // For other roles like admin, produksi, etc.
+        return [];
+
+    } catch (error) {
+        console.error("Gagal mengambil hierarki pengguna:", error);
+        throw new HttpsError('internal', 'Gagal memproses permintaan hierarki pengguna.');
+    }
+});
+
+
 module.exports = {
     getInvitationDetails,
     sendInvitation,
@@ -283,5 +337,6 @@ module.exports = {
     setUserRole,
     listAllUsers,
     createNewUser,
-    deleteUserAndProfile
+    deleteUserAndProfile,
+    getUserHierarchy
 };

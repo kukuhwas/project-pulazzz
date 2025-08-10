@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingIndicator = document.getElementById('loading-indicator');
     const profileContent = document.getElementById('profile-content');
     const roleBadge = document.getElementById('user-role-badge');
+    const hierarchySection = document.getElementById('hierarchy-section');
+    const hierarchyTreeContainer = document.getElementById('hierarchy-tree-container');
+
 
     // Mode Lihat
     const viewMode = document.getElementById('view-mode');
@@ -36,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Referensi Cloud Function
     const updateUserProfile = httpsCallable(functions, 'updateUserProfile');
+    const getUserHierarchy = httpsCallable(functions, 'getUserHierarchy');
 
     // State
     let currentUser = null;
@@ -58,6 +62,78 @@ document.addEventListener('DOMContentLoaded', () => {
         saveProfileBtn.classList.toggle('d-none', !isEditing);
         cancelEditBtn.classList.toggle('d-none', !isEditing);
     }
+
+    /**
+     * Secara rekursif merender struktur pohon menjadi HTML.
+     * Handles both tree (for reps) and flat list (for resellers).
+     */
+    function renderHierarchyTree(nodes, isTopLevel = true) {
+        if (!nodes || nodes.length === 0) return '';
+
+        // For resellers, the data is a flat list. For reps, it's a tree.
+        // The `isTopLevel` check helps us decide whether to wrap in the main `user-tree` class.
+        let html = isTopLevel ? '<ul class="user-tree">' : '<ul>';
+
+        nodes.forEach(node => {
+            const hasChildren = node.children && node.children.length > 0;
+            const userName = node.role === 'representatif' ? `<strong>${node.name}</strong>` : node.name;
+            const isCurrentUser = node.uid === currentUser.uid;
+
+            // Don't show the collapse icon for the top-level representative themselves
+            const isCollapsible = hasChildren && !isCurrentUser;
+
+            html += `<li data-uid="${node.uid}" class="${isCollapsible ? 'expanded' : ''}">`;
+            html += `<span class="tree-node ${isCollapsible ? 'collapsible' : ''}">`;
+
+            if (isCollapsible) {
+                html += '<i class="bi bi-caret-down-fill me-1"></i>';
+            }
+
+            // Add a 'You' badge for the current user in the hierarchy
+            if(isCurrentUser) {
+                html += `${userName} <span class="badge bg-primary">Anda</span>`;
+            } else {
+                html += `${userName} <span class="text-muted small">(${node.email} - ${node.role})</span>`;
+            }
+            html += '</span>';
+
+            if (hasChildren) {
+                // Pass false for isTopLevel in recursive calls
+                html += renderHierarchyTree(node.children, false);
+            }
+            html += '</li>';
+        });
+        html += '</ul>';
+
+        return html;
+    }
+
+    async function loadHierarchy(userRole) {
+        if (userRole !== 'reseller' && userRole !== 'representatif') {
+            hierarchySection.classList.add('d-none');
+            return;
+        }
+
+        hierarchySection.classList.remove('d-none');
+
+        try {
+            const result = await getUserHierarchy();
+            const data = result.data;
+
+            if (!data || data.length === 0) {
+                hierarchyTreeContainer.innerHTML = '<p class="text-muted">Tidak ada pengguna dalam hierarki Anda.</p>';
+                return;
+            }
+
+            const treeHtml = renderHierarchyTree(data);
+            hierarchyTreeContainer.innerHTML = treeHtml;
+
+        } catch (error) {
+            console.error("Gagal memuat hierarki:", error);
+            hierarchyTreeContainer.innerHTML = '<p class="text-danger">Gagal memuat hierarki pengguna.</p>';
+        }
+    }
+
 
     async function loadProfileData(uid) {
         try {
@@ -94,6 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadingIndicator.classList.add('d-none');
                 profileContent.classList.remove('d-none');
 
+                // Load hierarchy after profile is loaded
+                loadHierarchy(profileData.role);
+
             } else {
                 loadingIndicator.textContent = 'Gagal menemukan data profil.';
             }
@@ -105,12 +184,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     onAuthStateChanged(auth, (user) => {
+        const mainSpinner = document.querySelector('#main-header .spinner-border');
         if (user) {
             currentUser = user;
             loadProfileData(user.uid);
         } else {
             loadingIndicator.textContent = 'Anda harus login untuk melihat halaman ini.';
         }
+        if(mainSpinner) mainSpinner.classList.add('d-none');
     });
 
     editProfileBtn.addEventListener('click', () => {
@@ -154,6 +235,19 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Gagal memperbarui profil:", error);
             Swal.fire('Gagal', `Terjadi kesalahan: ${error.message}`, 'error');
+        }
+    });
+
+    hierarchyTreeContainer.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target.matches('.collapsible, .collapsible i')) {
+            const node = target.closest('li');
+            node.classList.toggle('expanded');
+            const icon = node.querySelector('.bi');
+            if (icon) {
+                icon.classList.toggle('bi-caret-right-fill');
+                icon.classList.toggle('bi-caret-down-fill');
+            }
         }
     });
 });
