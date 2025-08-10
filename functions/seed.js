@@ -2,30 +2,19 @@
 
 const admin = require("firebase-admin");
 
-// Cek apakah kita berada di lingkungan emulator
-if (process.env.FIRESTORE_EMULATOR_HOST) {
-  // --- BLOK 1: Untuk koneksi ke EMULATOR ---
-  console.log("Menghubungkan ke EMULATOR Firestore...");
-  admin.initializeApp({
-    projectId: "pulazzz-dev", // Gunakan project ID dummy untuk emulator
-  });
-  // --- AKHIR BLOK 1 ---
-} else {
-  // --- BLOK 2: Untuk koneksi ke database LIVE/PRODUKSI ---
-  // Pastikan file 'service-account-key-production.json' ada di folder functions
-  try {
-    const serviceAccount = require("./service-account-key-production.json");
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
-    console.log("Menghubungkan ke database LIVE/PRODUKSI...");
-  } catch (error) {
-    console.error("Gagal memuat service-account-key-production.json. Pastikan file ada dan benar.");
-    console.error("Script ini tidak boleh dijalankan di lingkungan produksi tanpa kunci layanan.");
+// Skrip ini HANYA untuk digunakan dengan Firebase Emulator.
+if (!process.env.FIRESTORE_EMULATOR_HOST) {
+    console.error("ERROR: Variabel lingkungan FIRESTORE_EMULATOR_HOST tidak diatur.");
+    console.error("Skrip seeding ini hanya boleh digunakan dengan emulator untuk mencegah perubahan data produksi yang tidak disengaja.");
+    console.error("Jalankan skrip ini melalui 'start-and-seed.sh' atau dengan mengatur FIRESTORE_EMULATOR_HOST secara manual.");
     process.exit(1);
-  }
-  // --- AKHIR BLOK 2 ---
 }
+
+// Selalu hubungkan ke EMULATOR
+console.log("Menghubungkan ke EMULATOR Firestore di host:", process.env.FIRESTORE_EMULATOR_HOST);
+admin.initializeApp({
+    projectId: "pulazzz-dev", // Gunakan project ID dummy untuk emulator
+});
 
 const db = admin.firestore();
 
