@@ -292,18 +292,16 @@ const getUserHierarchy = onCall({ region: 'asia-southeast2' }, async (request) =
     const userRole = userProfile.role;
 
     try {
+        // DEBUG: Fetch all profiles for both roles to isolate the issue.
+        const allProfilesSnap = await db.collection('profiles').get();
+        const allUsers = allProfilesSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+
         if (userRole === 'reseller') {
-            const snapshot = await db.collection('profiles').where('referralId', '==', uid).get();
-            if (snapshot.empty) {
-                return [];
-            }
-            const invitees = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+            // DEBUG: Filter in memory instead of using a 'where' query.
+            const invitees = allUsers.filter(user => user.referralId === uid);
             return invitees;
 
         } else if (userRole === 'representatif') {
-            const allProfilesSnap = await db.collection('profiles').get();
-            const allUsers = allProfilesSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
-
             const nodes = {};
             allUsers.forEach(user => {
                 nodes[user.uid] = { ...user, children: [] };
@@ -323,8 +321,8 @@ const getUserHierarchy = onCall({ region: 'asia-southeast2' }, async (request) =
         return [];
 
     } catch (error) {
-        console.error("Gagal mengambil hierarki pengguna:", error);
-        throw new HttpsError('internal', 'Gagal memproses permintaan hierarki pengguna.');
+        console.error("Gagal mengambil hierarki pengguna (debug mode):", error);
+        throw new HttpsError('internal', 'Gagal memproses permintaan hierarki pengguna (debug).');
     }
 });
 
