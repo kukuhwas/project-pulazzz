@@ -30,7 +30,8 @@ service cloud.firestore {
     
     // Data pesanan
     match /orders/{orderId} {
-    	allow read, write: if isAuth();
+      allow read, create, update: if isAuth();
+      allow delete: if false; // Deletion must be done via cloud function
     }
     match /orderCounters/{counterId} {
     	allow read, write: if isAuth();
