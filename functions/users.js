@@ -279,50 +279,13 @@ const getUserHierarchy = onCall({ region: 'asia-southeast2' }, async (request) =
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'Anda harus login untuk melihat data ini.');
     }
-
-    const uid = request.auth.uid;
-    const profileRef = db.collection('profiles').doc(uid);
-    const profileSnap = await profileRef.get();
-
-    if (!profileSnap.exists()) {
-        throw new HttpsError('not-found', 'Profil pengguna tidak ditemukan.');
-    }
-
-    const userProfile = profileSnap.data();
-    const userRole = userProfile.role;
-
     try {
-        // DEBUG: Fetch all profiles for both roles to isolate the issue.
         const allProfilesSnap = await db.collection('profiles').get();
-        const allUsers = allProfilesSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
-
-        if (userRole === 'reseller') {
-            // DEBUG: Filter in memory instead of using a 'where' query.
-            const invitees = allUsers.filter(user => user.referralId === uid);
-            return invitees;
-
-        } else if (userRole === 'representatif') {
-            const nodes = {};
-            allUsers.forEach(user => {
-                nodes[user.uid] = { ...user, children: [] };
-            });
-
-            Object.values(nodes).forEach(node => {
-                if (node.referralId && nodes[node.referralId]) {
-                    nodes[node.referralId].children.push(node);
-                }
-            });
-
-            // Return the subtree of the current representative
-            return nodes[uid] ? [nodes[uid]] : [];
-        }
-
-        // For other roles like admin, produksi, etc.
-        return [];
-
+        // DEBUG STEP 1: Just return the count of users found.
+        return { success: true, userCount: allProfilesSnap.size };
     } catch (error) {
-        console.error("Gagal mengambil hierarki pengguna (debug mode):", error);
-        throw new HttpsError('internal', 'Gagal memproses permintaan hierarki pengguna (debug).');
+        console.error("Gagal mengambil hierarki pengguna (debug step 1):", error);
+        throw new HttpsError('internal', 'Gagal memproses permintaan hierarki pengguna (debug step 1).');
     }
 });
 
