@@ -280,12 +280,13 @@ const getUserHierarchy = onCall({ region: 'asia-southeast2' }, async (request) =
         throw new HttpsError('unauthenticated', 'Anda harus login untuk melihat data ini.');
     }
     try {
+        // DEBUG STEP 2: Return the flat list of all users to test serialization.
         const allProfilesSnap = await db.collection('profiles').get();
-        // DEBUG STEP 1: Just return the count of users found.
-        return { success: true, userCount: allProfilesSnap.size };
+        const allUsers = allProfilesSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+        return allUsers;
     } catch (error) {
-        console.error("Gagal mengambil hierarki pengguna (debug step 1):", error);
-        throw new HttpsError('internal', 'Gagal memproses permintaan hierarki pengguna (debug step 1).');
+        console.error("Gagal mengambil hierarki pengguna (debug step 2):", error);
+        throw new HttpsError('internal', 'Gagal memproses permintaan hierarki pengguna (debug step 2).');
     }
 });
 

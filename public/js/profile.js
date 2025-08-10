@@ -115,22 +115,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         hierarchySection.classList.remove('d-none');
+        hierarchyTreeContainer.innerHTML = '<p>Menjalankan tes diagnosis langkah 2...</p>';
 
         try {
             const result = await getUserHierarchy();
             const data = result.data;
 
-            if (!data || data.length === 0) {
-                hierarchyTreeContainer.innerHTML = '<p class="text-muted">Tidak ada pengguna dalam hierarki Anda.</p>';
-                return;
+            console.log("Debug step 2: Data diterima dari server:", data);
+
+            if (Array.isArray(data)) {
+                hierarchyTreeContainer.innerHTML = `<p class="text-success">Tes diagnosis langkah 2 berhasil! Menerima ${data.length} data pengguna. Silakan periksa konsol untuk melihat datanya.</p>`;
+            } else {
+                 hierarchyTreeContainer.innerHTML = `<p class="text-warning">Tes diagnosis langkah 2: Data yang diterima bukan array. Lihat konsol.</p>`;
             }
 
-            const treeHtml = renderHierarchyTree(data);
-            hierarchyTreeContainer.innerHTML = treeHtml;
-
         } catch (error) {
-            console.error("Gagal memuat hierarki:", error);
-            hierarchyTreeContainer.innerHTML = '<p class="text-danger">Gagal memuat hierarki pengguna.</p>';
+            console.error("Gagal memuat hierarki (debug step 2):", error);
+            hierarchyTreeContainer.innerHTML = '<p class="text-danger">Gagal pada tes diagnosis langkah 2.</p>';
         }
     }
 
