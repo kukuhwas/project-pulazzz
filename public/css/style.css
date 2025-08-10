@@ -110,3 +110,17 @@
     font-size: 0.85rem;
     /* Perkecil font di dalam tabel */
 }
+
+/* --- Footer --- */
+.site-footer {
+    background-color: #253d8d;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+    font-style: italic;
+}
+
+.site-footer a {
+    color: white;
+    text-decoration: underline;
+}

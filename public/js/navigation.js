@@ -89,3 +89,29 @@ onAuthStateChanged(auth, async (user) => {
         navElement.innerHTML = createLoggedOutNavContent();
     }
 });
+
+
+/**
+ * Membuat dan menyuntikkan footer ke dalam body dokumen.
+ * Dibuat idempotent dengan memeriksa keberadaan footer terlebih dahulu.
+ */
+const createAndInjectFooter = () => {
+    // Pastikan footer belum ada untuk menghindari duplikasi
+    if (document.querySelector('.site-footer')) {
+        return;
+    }
+
+    const footerElement = document.createElement('footer');
+    footerElement.className = 'site-footer';
+
+    const quote = 'Crafted with code, and the good company of a friend called <a href="https://jules.google.com" target="_blank" rel="noopener noreferrer">Jules</a>. — Pulazzz Apz';
+
+    // Menggunakan <p> untuk semantic correctness dan mb-0 untuk menghapus margin bawah default
+    footerElement.innerHTML = `<p class="mb-0">${quote}</p>`;
+
+    document.body.appendChild(footerElement);
+};
+
+// Panggil fungsi untuk memastikan footer ditambahkan di setiap halaman
+// yang memuat skrip ini.
+createAndInjectFooter();
