@@ -167,8 +167,48 @@ const generateDisplayId = onDocumentCreated({ region: 'asia-southeast2', documen
     });
 });
 
+const deleteCancelledOrder = onCall({ region: 'asia-southeast2' }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Anda harus login untuk melakukan tindakan ini.');
+    }
+    const { role } = request.auth.token;
+    if (role !== 'admin') {
+        throw new HttpsError('permission-denied', 'Hanya admin yang dapat menghapus pesanan.');
+    }
+
+    const { orderId } = request.data;
+    if (!orderId) {
+        throw new HttpsError('invalid-argument', 'ID Pesanan tidak valid.');
+    }
+
+    const orderRef = db.collection('orders').doc(orderId);
+
+    try {
+        const orderDoc = await orderRef.get();
+        if (!orderDoc.exists) {
+            throw new HttpsError('not-found', 'Pesanan tidak ditemukan.');
+        }
+
+        const orderData = orderDoc.data();
+        if (orderData.status !== 'cancelled') {
+            throw new HttpsError('failed-precondition', 'Hanya pesanan dengan status "Dibatalkan" yang bisa dihapus.');
+        }
+
+        await orderRef.delete();
+
+        return { success: true, message: `Pesanan ${orderData.displayId || orderId} berhasil dihapus.` };
+    } catch (error) {
+        console.error(`Gagal menghapus pesanan ${orderId}:`, error);
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+        throw new HttpsError('internal', 'Terjadi kesalahan saat mencoba menghapus pesanan.');
+    }
+});
+
 module.exports = {
     findProfileByPhone,
     createOrderAndProfile,
-    generateDisplayId
+    generateDisplayId,
+    deleteCancelledOrder
 };

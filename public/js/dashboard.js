@@ -1,8 +1,10 @@
 // public/js/dashboard.js
 
-import { db, auth } from './firebase-config.js';
+import { db, auth, functions } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 import { collection, query, where, orderBy, getDocs, doc, updateDoc, limit, startAfter, getDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
+
 
 // --- Referensi Elemen ---
 const ordersContainer = document.getElementById('orders-container');
@@ -12,9 +14,17 @@ const loadMoreTrigger = document.getElementById('load-more-trigger');
 const statusFilterSelect = document.getElementById('status-filter');
 const noOrdersMessage = document.getElementById('no-orders-message');
 const createOrderBtn = document.getElementById('create-order-btn');
+
+// Modal Perubahan Status
 const statusChangeModal = new bootstrap.Modal(document.getElementById('status-change-modal'));
 const modalConfirmInput = document.getElementById('modal-confirm-input');
 const confirmStatusChangeBtn = document.getElementById('confirm-status-change-btn');
+
+// Modal Hapus Pesanan
+const deleteConfirmModal = new bootstrap.Modal(document.getElementById('delete-confirm-modal'));
+const deleteModalConfirmInput = document.getElementById('delete-modal-confirm-input');
+const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+
 
 // --- State Aplikasi ---
 let currentUserProfile = null;
@@ -46,62 +56,63 @@ const getStatusBadge = (status) => {
 };
 
 
-// =================================================================
-// --- PERUBAHAN DI SINI: Tombol Aksi Menjadi Dropdown ---
-// Fungsi ini diubah dari menampilkan beberapa tombol sejajar
-// menjadi satu tombol dropdown "Tindakan" untuk menghemat ruang
-// dan menyembunyikan opsi "Batalkan Pesanan" jika tidak lagi tersedia.
-// =================================================================
-function getActionButtons(order) {
+function getActionButtons(order, userProfile) {
     const { status, displayId, id: docId } = order;
-    let primaryActionText = '';
-    let primaryActionStatus = '';
-    const isCancelable = status === 'new_order';
+    const { role } = userProfile;
+    let actionItems = '';
 
-    switch (status) {
-        case 'new_order':
-            primaryActionText = 'Mulai Produksi';
-            primaryActionStatus = 'in_production';
-            break;
-        case 'in_production':
-            primaryActionText = 'Kirim Pesanan';
-            primaryActionStatus = 'shipped';
-            break;
-        case 'shipped':
-            primaryActionText = 'Selesaikan Pesanan';
-            primaryActionStatus = 'completed';
-            break;
-        default:
-            return `<p class="text-muted mb-0">Status Final</p>`;
+    // Logika untuk tombol aksi utama (ubah status)
+    const primaryActionMap = {
+        'new_order': { text: 'Mulai Produksi', status: 'in_production' },
+        'in_production': { text: 'Kirim Pesanan', status: 'shipped' },
+        'shipped': { text: 'Selesaikan Pesanan', status: 'completed' }
+    };
+
+    if (primaryActionMap[status]) {
+        const { text, status: nextStatus } = primaryActionMap[status];
+        actionItems += `
+            <li>
+                <button class="dropdown-item action-btn" data-action-type="status-change" data-id="${docId}" data-display-id="${displayId}" data-next-status="${nextStatus}">
+                    ${text}
+                </button>
+            </li>`;
     }
 
-    const primaryActionItem = `
-        <li>
-            <button class="dropdown-item action-btn" data-id="${docId}" data-display-id="${displayId}" data-next-status="${primaryActionStatus}">
-                ${primaryActionText}
-            </button>
-        </li>`;
+    // Opsi untuk membatalkan pesanan (hanya pada status 'new_order')
+    if (status === 'new_order') {
+        actionItems += `
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <button class="dropdown-item text-danger action-btn" data-action-type="status-change" data-id="${docId}" data-display-id="${displayId}" data-next-status="cancelled">
+                    Batalkan Pesanan
+                </button>
+            </li>`;
+    }
 
-    const cancelActionItem = isCancelable ? `
-        <li><hr class="dropdown-divider"></li>
-        <li>
-            <button class="dropdown-item text-danger action-btn" data-id="${docId}" data-display-id="${displayId}" data-next-status="cancelled">
-                Batalkan Pesanan
-            </button>
-        </li>
-    ` : '';
+    // Opsi untuk menghapus pesanan (hanya untuk admin pada status 'cancelled')
+    if (status === 'cancelled' && role === 'admin') {
+        actionItems += `
+            <li>
+                <button class="dropdown-item text-danger action-btn" data-action-type="delete" data-id="${docId}" data-display-id="${displayId}">
+                    <i class="bi bi-trash"></i> Hapus Permanen
+                </button>
+            </li>`;
+    }
 
-    return `
-        <div class="dropdown">
-            <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Tindakan
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                ${primaryActionItem}
-                ${cancelActionItem}
-            </ul>
-        </div>
-    `;
+
+    if (actionItems) {
+        return `
+            <div class="dropdown">
+                <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Tindakan
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    ${actionItems}
+                </ul>
+            </div>`;
+    }
+
+    return `<p class="text-muted mb-0">Status Final</p>`;
 }
 
 // --- Logika Utama ---
@@ -182,7 +193,7 @@ async function fetchAndDisplayOrders(isInitialLoad, statusFilter = 'all', userPr
                             📍 ${order.shippingAddress.city}, ${order.shippingAddress.province}
                         </p>
                         <div class="action-buttons">
-                            ${(userProfile.role === 'admin' || userProfile.role === 'produksi') ? getActionButtons(order) : ''}
+                            ${(userProfile.role === 'admin' || userProfile.role === 'produksi') ? getActionButtons(order, userProfile) : ''}
                         </div>
                     </div>
                 `;
@@ -234,45 +245,49 @@ const observer = new IntersectionObserver((entries) => {
 
 observer.observe(loadMoreTrigger);
 
-// =================================================================
-// --- PERUBAHAN DI SINI: Event Listener untuk Klik Kartu ---
-// =================================================================
 ordersContainer.addEventListener('click', (event) => {
     const targetElement = event.target;
-
-    // Cari elemen terdekat yang relevan dari target klik
     const actionButton = targetElement.closest('.action-btn');
     const footer = targetElement.closest('.card-footer');
     const card = targetElement.closest('.dashboard-card');
 
     if (actionButton) {
-        // Jika yang diklik adalah tombol aksi di dalam dropdown, jalankan logika modal
-        if (!actionButton.classList.contains('is-disabled')) {
-            const { id: docId, displayId, nextStatus } = actionButton.dataset;
-            const nextStatusText = statuses[nextStatus] || nextStatus;
+        const { actionType, id: docId, displayId, nextStatus } = actionButton.dataset;
 
+        if (actionType === 'status-change') {
+            const nextStatusText = statuses[nextStatus] || nextStatus;
             document.getElementById('modal-order-id').textContent = displayId;
             document.getElementById('modal-next-status').textContent = nextStatusText;
-
             modalConfirmInput.value = '';
             confirmStatusChangeBtn.disabled = true;
             confirmStatusChangeBtn.dataset.docId = docId;
             confirmStatusChangeBtn.dataset.nextStatus = nextStatus;
             confirmStatusChangeBtn.dataset.expectedId = displayId;
             statusChangeModal.show();
+        } else if (actionType === 'delete') {
+            document.getElementById('delete-modal-order-id').textContent = displayId;
+            deleteModalConfirmInput.value = '';
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.dataset.docId = docId;
+            confirmDeleteBtn.dataset.expectedId = displayId;
+            deleteConfirmModal.show();
         }
     } else if (card && !footer) {
-        // Jika yang diklik adalah kartu, TETAPI BUKAN footer,
-        // maka arahkan ke halaman konfirmasi.
         window.location.href = `konfirmasi.html?order_id=${card.dataset.id}`;
     }
-    // Jika yang diklik adalah area footer tapi bukan tombol aksi, tidak terjadi apa-apa.
 });
+
 
 modalConfirmInput.addEventListener('input', () => {
     const typedValue = modalConfirmInput.value.trim().toLowerCase();
     const expectedValue = confirmStatusChangeBtn.dataset.expectedId.trim().toLowerCase();
     confirmStatusChangeBtn.disabled = typedValue !== expectedValue;
+});
+
+deleteModalConfirmInput.addEventListener('input', () => {
+    const typedValue = deleteModalConfirmInput.value.trim().toLowerCase();
+    const expectedValue = confirmDeleteBtn.dataset.expectedId.trim().toLowerCase();
+    confirmDeleteBtn.disabled = typedValue !== expectedValue;
 });
 
 statusFilterSelect.addEventListener('change', () => {
@@ -310,5 +325,36 @@ confirmStatusChangeBtn.addEventListener('click', async (event) => {
     } finally {
         button.disabled = false;
         button.textContent = 'Ya, Ubah Status';
+    }
+});
+
+confirmDeleteBtn.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const { docId } = button.dataset;
+
+    button.disabled = true;
+    button.textContent = 'Menghapus...';
+
+    try {
+        const deleteOrder = httpsCallable(functions, 'deleteCancelledOrder');
+        const result = await deleteOrder({ orderId: docId });
+
+        if (result.data.success) {
+            deleteConfirmModal.hide();
+            // Show a success message (optional, using SweetAlert for consistency if you add it)
+            // Swal.fire('Berhasil!', result.data.message, 'success');
+            alert(result.data.message); // Simple alert for now
+            fetchAndDisplayOrders(true, statusFilterSelect.value, currentUserProfile);
+        } else {
+            // This case might not be reached if cloud function throws an error
+            throw new Error(result.data.message || 'Gagal menghapus pesanan.');
+        }
+    } catch (error) {
+        console.error("Gagal menghapus pesanan:", error);
+        // const errorMessage = error.details?.message || error.message;
+        alert(`Gagal menghapus pesanan: ${error.message}`);
+    } finally {
+        button.disabled = false;
+        button.textContent = 'Ya, Hapus Permanen';
     }
 });
