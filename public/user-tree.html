@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagram Pohon Pengguna - Sistem Order Pulazzz</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="css/style.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .user-tree ul {
+            list-style-type: none;
+            padding-left: 20px;
+            border-left: 1px dashed #ccc;
+        }
+        .user-tree li {
+            padding: 5px 0;
+            position: relative;
+        }
+        .user-tree li::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: -20px;
+            width: 20px;
+            height: 1px;
+            background-color: #ccc;
+        }
+        .tree-node {
+            cursor: pointer;
+            display: inline-block;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+        .tree-node:hover {
+            background-color: #f0f0f0;
+        }
+        .tree-node .bi {
+            transition: transform 0.1s ease-in-out;
+        }
+        /* Hide children by default */
+        .user-tree ul {
+            display: none;
+        }
+        /* Show children when expanded */
+        .user-tree li.expanded > ul {
+            display: block;
+        }
+        /* Rotate icon when expanded */
+        .user-tree li.expanded > .tree-node .bi {
+            transform: rotate(90deg);
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav id="main-header" class="navbar navbar-dark header-bg shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="/assets/logo-pulazzz-putih.png" alt="Logo Pulazzz" class="header-logo me-2">
+                <span class="d-none d-sm-inline">Order System</span>
+            </a>
+            <div class="d-flex">
+                <div class="spinner-border spinner-border-sm text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mt-5 main-container-limited">
+        <div id="admin-content" class="d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Diagram Pohon Pengguna</h2>
+                <a href="/admin.html" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Kembali ke Manajemen User
+                </a>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div id="user-tree-container">
+                        <div id="user-tree-loading" class="text-center col-12">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Memuat...</span>
+                            </div>
+                            <p>Memuat diagram pohon pengguna...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="access-denied" class="alert alert-danger text-center d-none">
+            <h5>Akses Ditolak</h5>
+            <p>Hanya admin yang dapat mengakses halaman ini.</p>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/firebase-config.js"></script>
+    <script type="module" src="js/auth-guard.js"></script>
+    <script type="module" src="js/navigation.js"></script>
+    <script type="module" src="js/user-tree.js"></script>
+</body>
+
+</html>

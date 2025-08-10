@@ -183,13 +183,31 @@ const listAllUsers = onCall({ region: 'asia-southeast2' }, async (request) => {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa melihat daftar pengguna.');
     }
     try {
-        const userRecords = await admin.auth().listUsers();
-        return userRecords.users.map(user => ({
-            uid: user.uid,
-            email: user.email,
-            role: user.customClaims?.role || 'N/A',
-            representativeId: user.customClaims?.representativeId || null,
-        }));
+        const listUsersResult = await admin.auth().listUsers();
+        const uids = listUsersResult.users.map(user => user.uid);
+        if (uids.length === 0) {
+            return [];
+        }
+
+        const profilesSnapshot = await db.collection('profiles').where(admin.firestore.FieldPath.documentId(), 'in', uids).get();
+        const profiles = {};
+        profilesSnapshot.forEach(doc => {
+            profiles[doc.id] = doc.data();
+        });
+
+        const usersWithProfiles = listUsersResult.users.map(user => {
+            const profile = profiles[user.uid] || {};
+            return {
+                uid: user.uid,
+                email: user.email,
+                name: profile.name || user.displayName || user.email,
+                role: profile.role || user.customClaims?.role || 'N/A',
+                referralId: profile.referralId || null,
+                representativeId: profile.representativeId || user.customClaims?.representativeId || null,
+            };
+        });
+
+        return usersWithProfiles;
     } catch (error) {
         console.error("Gagal mengambil daftar pengguna:", error);
         throw new HttpsError('internal', 'Gagal mengambil daftar pengguna.');
