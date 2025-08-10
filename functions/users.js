@@ -292,19 +292,17 @@ const getUserHierarchy = onCall({ region: 'asia-southeast2' }, async (request) =
     const userRole = userProfile.role;
 
     try {
+        // Fetch all profiles for both roles to ensure stability, avoiding .where() query.
+        const allProfilesSnap = await db.collection('profiles').get();
+        const allUsers = allProfilesSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+
         if (userRole === 'reseller') {
-            // Use the efficient query for resellers.
-            const snapshot = await db.collection('profiles').where('referralId', '==', uid).get();
-            if (snapshot.empty) {
-                return [];
-            }
-            const invitees = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+            // Filter in memory.
+            const invitees = allUsers.filter(user => user.referralId === uid);
             return invitees;
 
         } else if (userRole === 'representatif') {
             // Return the entire flat list and let the client build the tree.
-            const allProfilesSnap = await db.collection('profiles').get();
-            const allUsers = allProfilesSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
             return allUsers;
         }
 
