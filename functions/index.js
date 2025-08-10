@@ -3,7 +3,10 @@
 const admin = require("firebase-admin");
 
 // Inisialisasi Firebase Admin SDK sekali di file utama
-admin.initializeApp();
+// Cek apakah aplikasi sudah diinisialisasi sebelumnya untuk mencegah error duplikat
+if (admin.apps.length === 0) {
+    admin.initializeApp();
+}
 
 // Impor semua fungsi dari file-file modul
 const userFunctions = require('./users.js');
