@@ -92,6 +92,11 @@ const completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => 
         headRepresentativeId = inviterClaims.representativeId;
     }
 
+    // Materialized Path: ambil ancestors dari profil pengundang
+    const inviterProfileDoc = await db.collection('profiles').doc(invitationData.inviterUid).get();
+    const inviterAncestors = inviterProfileDoc.exists ? (inviterProfileDoc.data().ancestors || []) : [];
+    const newAncestors = [...inviterAncestors, invitationData.inviterUid];
+
     let userRecord;
     try {
         userRecord = await admin.auth().createUser({
@@ -128,6 +133,7 @@ const completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => 
                 role: 'reseller',
                 referralId: invitationData.inviterUid,
                 representativeId: headRepresentativeId,
+                ancestors: newAncestors,
                 createdAt: FieldValue.serverTimestamp(),
                 accountType: 'user'
             });
@@ -186,7 +192,13 @@ const setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
         await admin.auth().setCustomUserClaims(user.uid, claims);
 
         const profileRef = db.collection('profiles').doc(user.uid);
-        await profileRef.update({ role: role, representativeId: claims.representativeId });
+        let ancestors = [];
+        if (role === 'reseller' && representativeId) {
+            const repProfile = await db.collection('profiles').doc(representativeId).get();
+            const repAncestors = repProfile.exists ? (repProfile.data().ancestors || []) : [];
+            ancestors = [...repAncestors, representativeId];
+        }
+        await profileRef.update({ role: role, representativeId: claims.representativeId, ancestors: ancestors });
 
         return { success: true, message: `Berhasil menjadikan ${email} sebagai ${role}.` };
     } catch (error) {
@@ -208,12 +220,19 @@ const listAllUsers = onCall({
     }
     try {
         const userRecords = await admin.auth().listUsers();
-        return userRecords.users.map(user => ({
-            uid: user.uid,
-            email: user.email,
-            role: user.customClaims?.role || 'N/A',
-            representativeId: user.customClaims?.representativeId || null,
+        const users = await Promise.all(userRecords.users.map(async (user) => {
+            const profileDoc = await db.collection('profiles').doc(user.uid).get();
+            const profileData = profileDoc.exists ? profileDoc.data() : {};
+            return {
+                uid: user.uid,
+                email: user.email,
+                role: user.customClaims?.role || profileData.role || 'N/A',
+                representativeId: user.customClaims?.representativeId || profileData.representativeId || null,
+                ancestors: profileData.ancestors || [],
+                name: profileData.name || user.displayName || null,
+            };
         }));
+        return users;
     } catch (error) {
         console.error("Gagal mengambil daftar pengguna:", error);
         throw new HttpsError('internal', 'Gagal mengambil daftar pengguna.');
@@ -235,12 +254,20 @@ const createNewUser = onCall({ region: 'asia-southeast2' }, async (request) => {
         claims.representativeId = (role === 'reseller' && representativeId) ? representativeId : null;
         await admin.auth().setCustomUserClaims(userRecord.uid, claims);
 
+        let ancestors = [];
+        if (claims.representativeId) {
+            const repProfile = await db.collection('profiles').doc(claims.representativeId).get();
+            const repAncestors = repProfile.exists ? (repProfile.data().ancestors || []) : [];
+            ancestors = [...repAncestors, claims.representativeId];
+        }
+
         const profileRef = db.collection('profiles').doc(userRecord.uid);
         await profileRef.set({
             name: name,
             email: email,
             role: role,
             representativeId: claims.representativeId,
+            ancestors: ancestors,
             createdAt: FieldValue.serverTimestamp(),
             accountType: 'user'
         });
