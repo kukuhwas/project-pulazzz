@@ -1,10 +1,35 @@
-// functions/users.js
+// functions/users.js (Versi Final Terupdate)
 
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 const db = getFirestore();
+
+// --- FUNGSI PEMBANTU ---
+
+/**
+ * Fungsi ini secara rekursif mencari silsilah berdasarkan referralId ("Orang Tua").
+ * @param {string} docId - ID dokumen profil yang akan ditelusuri.
+ * @param {Set<string>} visited - Set untuk melacak ID yang sudah dikunjungi untuk mencegah perulangan tak terbatas.
+ * @returns {Promise<string[]>} - Sebuah array berisi ID para leluhur.
+ */
+async function getAncestorsByReferral(docId, visited = new Set()) {
+    if (!docId || visited.has(docId)) {
+        if (visited.has(docId)) console.warn(`Deteksi perulangan silsilah pada ID: ${docId}`);
+        return [];
+    }
+    visited.add(docId);
+
+    const profileDoc = await db.collection('profiles').doc(docId).get();
+    if (!profileDoc.exists) return [];
+
+    const parentId = profileDoc.data().referralId;
+    if (!parentId) return [];
+
+    const parentAncestors = await getAncestorsByReferral(parentId, visited);
+    return [...parentAncestors, parentId];
+}
 
 function formatIndonesianPhoneNumber(phoneNumber) {
     if (!phoneNumber || typeof phoneNumber !== 'string') return null;
@@ -17,6 +42,7 @@ function formatIndonesianPhoneNumber(phoneNumber) {
     return null;
 }
 
+// --- FUNGSI UTAMA ---
 const getInvitationDetails = onCall({ region: 'asia-southeast2' }, async (request) => {
     const { referralCode } = request.data;
     if (!referralCode) {
@@ -68,7 +94,7 @@ const sendInvitation = onCall({ region: 'asia-southeast2', secrets: ["SENDGRID_A
     }
 });
 
-const completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => {
+const completeSignup = onCall({ cors: true, region: 'asia-southeast2' }, async (request) => {
     const { referralCode, password, name, phone, address, district, city, province } = request.data;
     if (!referralCode || !password || !name || !phone || !address || !district || !city || !province) {
         throw new HttpsError('invalid-argument', 'Data pendaftaran tidak lengkap.');
@@ -80,22 +106,23 @@ const completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => 
         throw new HttpsError('not-found', 'Kode undangan tidak valid atau sudah digunakan.');
     }
     const invitationData = invitationDoc.data();
+    const inviterId = invitationData.inviterUid;
 
-    // Logika baru untuk mencari kepala representatif secara berantai
-    const inviterUser = await admin.auth().getUser(invitationData.inviterUid);
-    const inviterClaims = inviterUser.customClaims || {};
+    // 1. Logika untuk mencari 'Guru' (representativeId) dari "Orang Tua" langsung
+    const inviterProfileDoc = await db.collection('profiles').doc(inviterId).get();
     let headRepresentativeId = null;
-
-    if (inviterClaims.role === 'representatif') {
-        headRepresentativeId = invitationData.inviterUid;
-    } else if (inviterClaims.role === 'reseller' && inviterClaims.representativeId) {
-        headRepresentativeId = inviterClaims.representativeId;
+    if (inviterProfileDoc.exists) {
+        const inviterProfile = inviterProfileDoc.data();
+        if (inviterProfile.role === 'representatif') {
+            headRepresentativeId = inviterId;
+        } else if (inviterProfile.role === 'reseller' && inviterProfile.representativeId) {
+            headRepresentativeId = inviterProfile.representativeId;
+        }
     }
 
-    // Materialized Path: ambil ancestors dari profil pengundang
-    const inviterProfileDoc = await db.collection('profiles').doc(invitationData.inviterUid).get();
-    const inviterAncestors = inviterProfileDoc.exists ? (inviterProfileDoc.data().ancestors || []) : [];
-    const newAncestors = [...inviterAncestors, invitationData.inviterUid];
+    // 2. Logika untuk mencari silsilah 'Orang Tua' (ancestors) berdasarkan referralId
+    const parentAncestors = await getAncestorsByReferral(inviterId, new Set());
+    const newAncestors = [...parentAncestors, inviterId];
 
     let userRecord;
     try {
@@ -121,29 +148,22 @@ const completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => 
             }
 
             const profileRef = db.collection('profiles').doc(userRecord.uid);
-
             transaction.set(profileRef, {
                 name: name,
                 phone: formatIndonesianPhoneNumber(phone),
-                address: address,
-                district: district,
-                city: city,
-                province: province,
+                address, district, city, province,
                 email: invitationData.inviteeEmail,
                 role: 'reseller',
-                referralId: invitationData.inviterUid,
+                referralId: inviterId,
                 representativeId: headRepresentativeId,
                 ancestors: newAncestors,
                 createdAt: FieldValue.serverTimestamp(),
                 accountType: 'user'
             });
-
             transaction.update(invitationRef, { status: 'completed', completedAt: FieldValue.serverTimestamp() });
         });
     } catch (error) {
-        await admin.auth().deleteUser(userRecord.uid).catch((deleteError) => {
-            console.error("Gagal menghapus pengguna setelah kegagalan transaksi:", deleteError);
-        });
+        await admin.auth().deleteUser(userRecord.uid).catch(console.error);
         if (error instanceof HttpsError) { throw error; }
         throw new HttpsError('internal', 'Gagal memproses pendaftaran.');
     }
@@ -176,7 +196,7 @@ const updateUserProfile = onCall({ region: 'asia-southeast2' }, async (request) 
     }
 });
 
-const setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
+const setUserRole = onCall({ cors: true, region: 'asia-southeast2' }, async (request) => {
     if (request.auth.token.role !== 'admin') {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa mengubah peran pengguna.');
     }
@@ -192,13 +212,8 @@ const setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
         await admin.auth().setCustomUserClaims(user.uid, claims);
 
         const profileRef = db.collection('profiles').doc(user.uid);
-        let ancestors = [];
-        if (role === 'reseller' && representativeId) {
-            const repProfile = await db.collection('profiles').doc(representativeId).get();
-            const repAncestors = repProfile.exists ? (repProfile.data().ancestors || []) : [];
-            ancestors = [...repAncestors, representativeId];
-        }
-        await profileRef.update({ role: role, representativeId: claims.representativeId, ancestors: ancestors });
+        // Silsilah (ancestors) tidak diubah di sini karena berdasarkan referralId yang tetap.
+        await profileRef.update({ role: role, representativeId: claims.representativeId });
 
         return { success: true, message: `Berhasil menjadikan ${email} sebagai ${role}.` };
     } catch (error) {
@@ -208,31 +223,69 @@ const setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
 });
 
 const listAllUsers = onCall({
-    region: 'asia-southeast2',
-    cors: [
-        "https://project-pulazzz-staging-5b316.web.app",
-        "https://project-pulazzz.web.app", // Sekalian tambahkan domain produksi
-        "http://127.0.0.1:5000" // Untuk pengujian di emulator lokal
-    ]
+    cors: true,
+    region: 'asia-southeast2'
 }, async (request) => {
-    if (request.auth.token.role !== 'admin') {
-        throw new HttpsError('permission-denied', 'Hanya admin yang bisa melihat daftar pengguna.');
+    const userRole = request.auth.token.role;
+    const userId = request.auth.uid;
+
+    if (userRole !== 'admin' && userRole !== 'representatif') {
+        throw new HttpsError('permission-denied', 'Hanya admin atau representatif yang bisa melihat daftar pengguna.');
     }
+
     try {
-        const userRecords = await admin.auth().listUsers();
-        const users = await Promise.all(userRecords.users.map(async (user) => {
-            const profileDoc = await db.collection('profiles').doc(user.uid).get();
-            const profileData = profileDoc.exists ? profileDoc.data() : {};
+        let profilesQuery;
+
+        if (userRole === 'admin') {
+            // Admin: Ambil semua profil
+            profilesQuery = db.collection('profiles');
+        } else { // userRole === 'representatif'
+            // Representatif: Ambil dirinya sendiri DAN semua yang punya dia di silsilahnya
+            profilesQuery = db.collection('profiles')
+                .where('ancestors', 'array-contains', userId);
+
+            // Catatan: Query di atas tidak akan mengembalikan data representatif itu sendiri.
+            // Kita akan mengambilnya secara terpisah dan menggabungkannya.
+        }
+
+        const profilesSnapshot = await profilesQuery.get();
+        const profilesMap = new Map();
+        profilesSnapshot.forEach(doc => {
+            profilesMap.set(doc.id, doc.data());
+        });
+
+        // Jika representatif, tambahkan data dirinya sendiri ke dalam map
+        if (userRole === 'representatif') {
+            const selfProfileDoc = await db.collection('profiles').doc(userId).get();
+            if (selfProfileDoc.exists) {
+                profilesMap.set(userId, selfProfileDoc.data());
+            }
+        }
+
+        // Ambil data dari Auth HANYA untuk profil yang relevan
+        // Ini lebih efisien daripada listUsers() penuh untuk representatif
+        const uidsToFetch = Array.from(profilesMap.keys());
+        if (uidsToFetch.length === 0) {
+            return []; // Kembalikan array kosong jika tidak ada pengguna
+        }
+
+        const authUsers = await admin.auth().getUsers(uidsToFetch.map(uid => ({ uid })));
+
+        const allUsersData = authUsers.users.map(userRecord => {
+            const profile = profilesMap.get(userRecord.uid) || {};
             return {
-                uid: user.uid,
-                email: user.email,
-                role: user.customClaims?.role || profileData.role || 'N/A',
-                representativeId: user.customClaims?.representativeId || profileData.representativeId || null,
-                ancestors: profileData.ancestors || [],
-                name: profileData.name || user.displayName || null,
+                uid: userRecord.uid,
+                email: userRecord.email,
+                name: profile.name || userRecord.displayName,
+                role: profile.role || 'N/A',
+                referralId: profile.referralId || null,
+                representativeId: profile.representativeId || null,
+                ancestors: profile.ancestors || []
             };
-        }));
-        return users;
+        });
+
+        return allUsersData;
+
     } catch (error) {
         console.error("Gagal mengambil daftar pengguna:", error);
         throw new HttpsError('internal', 'Gagal mengambil daftar pengguna.');
