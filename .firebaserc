@@ -1,6 +1,9 @@
 {
   "projects": {
     "default": "project-pulazzz",
-    "staging": "project-pulazzz-staging-5b316"
-  }
+    "staging": "project-pulazzz-staging-5b316",
+    "production": "project-pulazzz"
+  },
+  "targets": {},
+  "etags": {}
 }

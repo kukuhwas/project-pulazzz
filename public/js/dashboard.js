@@ -36,7 +36,7 @@ let allDataLoaded = false;
 // --- Data & Fungsi Bantuan ---
 const statuses = {
     'new_order': 'Pesanan Baru',
-    'in_production': 'Dalam Produksi',
+    'in_production': 'Dalam Proses',
     'shipped': 'Dikirim',
     'completed': 'Selesai',
     'cancelled': 'Dibatalkan'
@@ -47,7 +47,7 @@ const formatDate = (timestamp) => timestamp ? timestamp.toDate().toLocaleDateStr
 const getStatusBadge = (status) => {
     const statusInfo = {
         'new_order': { text: 'Pesanan Baru', class: 'bg-primary' },
-        'in_production': { text: 'Dalam Produksi', class: 'bg-warning text-dark' },
+        'in_production': { text: 'Dalam Proses', class: 'bg-warning text-dark' },
         'shipped': { text: 'Dikirim', class: 'bg-info text-dark' },
         'completed': { text: 'Selesai', class: 'bg-success' },
         'cancelled': { text: 'Dibatalkan', class: 'bg-danger' }
@@ -63,7 +63,7 @@ function getActionButtons(order, userProfile) {
 
     // Logika untuk tombol aksi utama (ubah status)
     const primaryActionMap = {
-        'new_order': { text: 'Mulai Produksi', status: 'in_production' },
+        'new_order': { text: 'Mulai Proses', status: 'in_production' },
         'in_production': { text: 'Kirim Pesanan', status: 'shipped' },
         'shipped': { text: 'Selesaikan Pesanan', status: 'completed' }
     };
