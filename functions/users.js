@@ -195,7 +195,14 @@ const setUserRole = onCall({ region: 'asia-southeast2' }, async (request) => {
     }
 });
 
-const listAllUsers = onCall({ region: 'asia-southeast2' }, async (request) => {
+const listAllUsers = onCall({
+    region: 'asia-southeast2',
+    cors: [
+        "https://project-pulazzz-staging-5b316.web.app",
+        "https://project-pulazzz.web.app", // Sekalian tambahkan domain produksi
+        "http://127.0.0.1:5000" // Untuk pengujian di emulator lokal
+    ]
+}, async (request) => {
     if (request.auth.token.role !== 'admin') {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa melihat daftar pengguna.');
     }

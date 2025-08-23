@@ -14,10 +14,8 @@ functions/service-account-key.json
 # macOS system files
 .DS_Store
 
-
-
-
-
-
 local-emulator-data/
 imported-data/
+
+# Ignore service account keys
+functions/serviceAccountKey-*.json

@@ -89,3 +89,43 @@ onAuthStateChanged(auth, async (user) => {
         navElement.innerHTML = createLoggedOutNavContent();
     }
 });
+
+
+/**
+ * Membuat dan menyuntikkan footer ke dalam body dokumen.
+ * Fungsi ini sekarang juga menangani padding body untuk mengakomodasi footer yang fixed.
+ */
+const createAndInjectFooter = () => {
+    // Pastikan footer belum ada untuk menghindari duplikasi
+    if (document.querySelector('.site-footer')) {
+        return;
+    }
+
+    const footerElement = document.createElement('footer');
+    footerElement.className = 'site-footer';
+
+    const quote = 'Crafted with code, and the good company of a friend called <a href="https://jules.google.com" target="_blank" rel="noopener noreferrer">Jules</a>. — Pulazzz Apz';
+
+    footerElement.innerHTML = `<p class="mb-0">${quote}</p>`;
+
+    document.body.appendChild(footerElement);
+
+    /**
+     * Menyesuaikan padding-bottom dari body agar sama dengan tinggi footer.
+     * Hal ini mencegah konten terakhir halaman tersembunyi di balik footer.
+     */
+    const adjustBodyPadding = () => {
+        const footerHeight = footerElement.offsetHeight;
+        document.body.style.paddingBottom = `${footerHeight}px`;
+    };
+
+    // Panggil fungsi penyesuaian padding saat pertama kali footer dibuat
+    adjustBodyPadding();
+
+    // Tambahkan event listener untuk menyesuaikan padding jika ukuran jendela berubah
+    // (misalnya, jika teks di footer jadi multi-baris dan mengubah tingginya)
+    window.addEventListener('resize', adjustBodyPadding);
+};
+
+// Panggil fungsi untuk menambahkan footer di setiap halaman yang memuat skrip ini.
+createAndInjectFooter();
