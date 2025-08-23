@@ -75,57 +75,74 @@ const completeSignup = onCall({ region: 'asia-southeast2' }, async (request) => 
     }
 
     const invitationRef = db.collection('invitations').doc(referralCode);
+    const invitationDoc = await invitationRef.get();
+    if (!invitationDoc.exists || invitationDoc.data().status !== 'pending') {
+        throw new HttpsError('not-found', 'Kode undangan tidak valid atau sudah digunakan.');
+    }
+    const invitationData = invitationDoc.data();
 
-    return db.runTransaction(async (transaction) => {
-        const invitationDoc = await transaction.get(invitationRef);
-        if (!invitationDoc.exists || invitationDoc.data().status !== 'pending') {
-            throw new HttpsError('not-found', 'Kode undangan tidak valid atau sudah digunakan.');
-        }
+    // Logika baru untuk mencari kepala representatif secara berantai
+    const inviterUser = await admin.auth().getUser(invitationData.inviterUid);
+    const inviterClaims = inviterUser.customClaims || {};
+    let headRepresentativeId = null;
 
-        const invitationData = invitationDoc.data();
+    if (inviterClaims.role === 'representatif') {
+        headRepresentativeId = invitationData.inviterUid;
+    } else if (inviterClaims.role === 'reseller' && inviterClaims.representativeId) {
+        headRepresentativeId = inviterClaims.representativeId;
+    }
 
-        // Logika baru untuk mencari kepala representatif secara berantai
-        const inviterUser = await admin.auth().getUser(invitationData.inviterUid);
-        const inviterClaims = inviterUser.customClaims || {};
-        let headRepresentativeId = null;
-
-        if (inviterClaims.role === 'representatif') {
-            headRepresentativeId = invitationData.inviterUid;
-        } else if (inviterClaims.role === 'reseller' && inviterClaims.representativeId) {
-            headRepresentativeId = inviterClaims.representativeId;
-        }
-
-        const userRecord = await admin.auth().createUser({
+    let userRecord;
+    try {
+        userRecord = await admin.auth().createUser({
             email: invitationData.inviteeEmail,
             password: password,
             displayName: name,
         });
-
         await admin.auth().setCustomUserClaims(userRecord.uid, {
             role: 'reseller',
             representativeId: headRepresentativeId
         });
+    } catch (error) {
+        console.error("Gagal membuat pengguna baru:", error);
+        throw new HttpsError('internal', 'Gagal membuat pengguna baru.');
+    }
 
-        const profileRef = db.collection('profiles').doc(userRecord.uid);
+    try {
+        await db.runTransaction(async (transaction) => {
+            const latestInvitation = await transaction.get(invitationRef);
+            if (!latestInvitation.exists || latestInvitation.data().status !== 'pending') {
+                throw new HttpsError('not-found', 'Kode undangan tidak valid atau sudah digunakan.');
+            }
 
-        transaction.set(profileRef, {
-            name: name,
-            phone: formatIndonesianPhoneNumber(phone),
-            address: address,
-            district: district,
-            city: city,
-            province: province,
-            email: invitationData.inviteeEmail,
-            role: 'reseller',
-            referralId: invitationData.inviterUid,
-            representativeId: headRepresentativeId,
-            createdAt: FieldValue.serverTimestamp(),
-            accountType: 'user'
+            const profileRef = db.collection('profiles').doc(userRecord.uid);
+
+            transaction.set(profileRef, {
+                name: name,
+                phone: formatIndonesianPhoneNumber(phone),
+                address: address,
+                district: district,
+                city: city,
+                province: province,
+                email: invitationData.inviteeEmail,
+                role: 'reseller',
+                referralId: invitationData.inviterUid,
+                representativeId: headRepresentativeId,
+                createdAt: FieldValue.serverTimestamp(),
+                accountType: 'user'
+            });
+
+            transaction.update(invitationRef, { status: 'completed', completedAt: FieldValue.serverTimestamp() });
         });
+    } catch (error) {
+        await admin.auth().deleteUser(userRecord.uid).catch((deleteError) => {
+            console.error("Gagal menghapus pengguna setelah kegagalan transaksi:", deleteError);
+        });
+        if (error instanceof HttpsError) { throw error; }
+        throw new HttpsError('internal', 'Gagal memproses pendaftaran.');
+    }
 
-        transaction.update(invitationRef, { status: 'completed', completedAt: FieldValue.serverTimestamp() });
-        return { success: true, message: 'Pendaftaran berhasil!' };
-    });
+    return { success: true, message: 'Pendaftaran berhasil!' };
 });
 
 const updateUserProfile = onCall({ region: 'asia-southeast2' }, async (request) => {
