@@ -52,6 +52,7 @@
                                 <p class="fs-5" id="profile-email-view">-</p>
                             </div>
                         </div>
+
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Nomor HP</label>
@@ -62,47 +63,57 @@
                                 <p class="fs-5" id="profile-representative-view">-</p>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Alamat</label>
-                            <p class="fs-5" id="profile-address-view">-</p>
-                        </div>
-                    </div>
 
-                    <form id="edit-mode" class="d-none">
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="profile-name-edit" class="form-label">Nama Lengkap</label>
-                                <input type="text" id="profile-name-edit" class="form-control" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="profile-email-edit" class="form-label">Email</label>
-                                <input type="email" id="profile-email-edit" class="form-control" disabled readonly>
+                            <div class="col-md-6 offset-md-6 mb-3" id="referral-info" style="display: none;">
+                                <label class="form-label text-muted">Direferensikan Oleh</label>
+                                <p class="fs-5" id="profile-referrer-view">-</p>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="profile-phone-edit" class="form-label">Nomor HP</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">+62</span>
-                                    <input type="tel" id="profile-phone-edit" class="form-control" required>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="profile-address-edit" class="form-label">Alamat</label>
-                            <textarea id="profile-address-edit" class="form-control" rows="3" required></textarea>
-                        </div>
-                    </form>
+
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Alamat</label>
+                    <p class="fs-5" id="profile-address-view">-</p>
                 </div>
             </div>
-            <div class="card-footer text-end">
-                <button class="btn btn-secondary" id="back-btn">Kembali ke Dashboard</button>
-                <button class="btn btn-primary" id="edit-profile-btn"><i class="bi bi-pencil-square"></i> Edit
-                    Profil</button>
-                <button class="btn btn-success d-none" id="save-profile-btn"><i class="bi bi-save"></i> Simpan
-                    Perubahan</button>
-                <button class="btn btn-secondary d-none" id="cancel-edit-btn">Batal</button>
-            </div>
+
+            <form id="edit-mode" class="d-none">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="profile-name-edit" class="form-label">Nama Lengkap</label>
+                        <input type="text" id="profile-name-edit" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="profile-email-edit" class="form-label">Email</label>
+                        <input type="email" id="profile-email-edit" class="form-control" disabled readonly>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="profile-phone-edit" class="form-label">Nomor HP</label>
+                        <div class="input-group">
+                            <span class="input-group-text">+62</span>
+                            <input type="tel" id="profile-phone-edit" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="profile-address-edit" class="form-label">Alamat</label>
+                    <textarea id="profile-address-edit" class="form-control" rows="3" required></textarea>
+                </div>
+            </form>
+        </div>
+        </div>
+        <div class="card-footer text-end">
+            <button class="btn btn-secondary" id="back-btn">Kembali ke Dashboard</button>
+            <button class="btn btn-primary" id="edit-profile-btn"><i class="bi bi-pencil-square"></i> Edit
+                Profil</button>
+            <button class="btn btn-success d-none" id="save-profile-btn"><i class="bi bi-save"></i> Simpan
+                Perubahan</button>
+            <button class="btn btn-secondary d-none" id="cancel-edit-btn">Batal</button>
+        </div>
         </div>
     </main>
 

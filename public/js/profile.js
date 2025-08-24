@@ -1,13 +1,11 @@
-// public/js/profile.js
+// public/js/profile.js (Versi Lengkap Terupdate)
 
-import { db, auth, functions } from './firebase-config.js';
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { auth, functions } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    // --- Referensi Elemen ---
+    // Referensi Elemen Umum
     const loadingIndicator = document.getElementById('loading-indicator');
     const profileContent = document.getElementById('profile-content');
     const roleBadge = document.getElementById('user-role-badge');
@@ -20,11 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const addressView = document.getElementById('profile-address-view');
     const representativeInfoEl = document.getElementById('representative-info');
     const representativeView = document.getElementById('profile-representative-view');
+    const referralInfoEl = document.getElementById('referral-info');
+    const referrerView = document.getElementById('profile-referrer-view');
 
     // Mode Edit
     const editMode = document.getElementById('edit-mode');
     const nameEdit = document.getElementById('profile-name-edit');
-    const emailEdit = document.getElementById('profile-email-edit');
     const phoneEdit = document.getElementById('profile-phone-edit');
     const addressEdit = document.getElementById('profile-address-edit');
 
@@ -34,12 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveProfileBtn = document.getElementById('save-profile-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
 
-    // Referensi Cloud Function
+    // Referensi Cloud Functions
+    const getUserProfile = httpsCallable(functions, 'getUserProfile');
     const updateUserProfile = httpsCallable(functions, 'updateUserProfile');
 
-    // State
     let currentUser = null;
-
 
     const roleBadges = {
         admin: { class: 'bg-danger', text: 'Admin' },
@@ -51,53 +49,52 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleEditMode(isEditing) {
         viewMode.classList.toggle('d-none', isEditing);
         editMode.classList.toggle('d-none', !isEditing);
-
         editProfileBtn.classList.toggle('d-none', isEditing);
         backBtn.classList.toggle('d-none', isEditing);
-
         saveProfileBtn.classList.toggle('d-none', !isEditing);
         cancelEditBtn.classList.toggle('d-none', !isEditing);
     }
 
-    async function loadProfileData(uid) {
+    async function loadProfileData() {
+        if (!currentUser) return;
         try {
-            const profileRef = doc(db, 'profiles', uid);
-            const profileSnap = await getDoc(profileRef);
+            const result = await getUserProfile();
+            const profileData = result.data;
 
-            if (profileSnap.exists()) {
-                const profileData = profileSnap.data();
+            // Isi Mode Lihat
+            nameView.textContent = profileData.name || '-';
+            emailView.textContent = profileData.email || '-';
+            phoneView.textContent = profileData.phone || '-';
+            addressView.textContent = profileData.address || '-';
 
-                nameView.textContent = profileData.name || '-';
-                emailView.textContent = profileData.email || '-';
-                phoneView.textContent = profileData.phone || '-';
-                addressView.textContent = profileData.address || '-';
+            // Isi Mode Edit (untuk persiapan)
+            nameEdit.value = profileData.name || '';
+            phoneEdit.value = (profileData.phone || '').replace('62', '');
+            addressEdit.value = profileData.address || '';
 
-                nameEdit.value = profileData.name || '';
-                emailEdit.value = profileData.email || '';
-                phoneEdit.value = (profileData.phone || '').replace('62', '');
-                addressEdit.value = profileData.address || '';
+            // Set badge peran
+            const badgeInfo = roleBadges[profileData.role] || { class: 'bg-secondary', text: profileData.role };
+            roleBadge.textContent = badgeInfo.text;
+            roleBadge.className = `badge ${badgeInfo.class}`;
 
-                const badgeInfo = roleBadges[profileData.role] || { class: 'bg-secondary', text: profileData.role };
-                roleBadge.textContent = badgeInfo.text;
-                roleBadge.className = `badge ${badgeInfo.class}`;
-
-
-                if (profileData.role === 'reseller' && profileData.representativeId) {
-                    representativeInfoEl.style.display = 'block';
-                    const repRef = doc(db, 'profiles', profileData.representativeId);
-                    const repSnap = await getDoc(repRef);
-                    representativeView.textContent = repSnap.exists() ? (repSnap.data().name || repSnap.data().email) : 'Data representatif tidak ditemukan.';
-                } else {
-                    representativeInfoEl.style.display = 'none';
-                }
-
-                loadingIndicator.classList.add('d-none');
-                profileContent.classList.remove('d-none');
-
+            // Tampilkan info representatif ("Guru")
+            if (profileData.representativeName) {
+                representativeInfoEl.style.display = 'block';
+                representativeView.textContent = profileData.representativeName;
             } else {
-                loadingIndicator.textContent = 'Gagal menemukan data profil.';
+                representativeInfoEl.style.display = 'none';
             }
 
+            // Tampilkan info pereferensi ("Orang Tua")
+            if (profileData.referrerName) {
+                referralInfoEl.style.display = 'block';
+                referrerView.textContent = profileData.referrerName;
+            } else {
+                referralInfoEl.style.display = 'none';
+            }
+
+            loadingIndicator.classList.add('d-none');
+            profileContent.classList.remove('d-none');
         } catch (error) {
             console.error("Gagal memuat profil:", error);
             loadingIndicator.textContent = 'Terjadi kesalahan saat memuat profil.';
@@ -107,48 +104,30 @@ document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
-            loadProfileData(user.uid);
+            loadProfileData();
         } else {
-            loadingIndicator.textContent = 'Anda harus login untuk melihat halaman ini.';
+            // Ditangani oleh auth-guard.js
         }
     });
 
-    editProfileBtn.addEventListener('click', () => {
-        toggleEditMode(true);
-    });
-
-    cancelEditBtn.addEventListener('click', () => {
-        toggleEditMode(false);
-        if (currentUser) loadProfileData(currentUser.uid);
-    });
-
-    backBtn.addEventListener('click', () => {
-        window.location.href = 'dashboard.html';
-    });
+    editProfileBtn.addEventListener('click', () => toggleEditMode(true));
+    cancelEditBtn.addEventListener('click', () => toggleEditMode(false));
+    backBtn.addEventListener('click', () => window.location.href = 'dashboard.html');
 
     saveProfileBtn.addEventListener('click', async () => {
         const phoneValue = phoneEdit.value.replace(/\D/g, '');
-        const fullPhone = `62${phoneValue}`;
-        if (fullPhone.length < 11 || fullPhone.length > 15) {
-            Swal.fire('Error', 'Panjang nomor telepon tidak valid.', 'error');
-            return;
-        }
-
         const updatedData = {
             name: nameEdit.value,
-            phone: fullPhone,
+            phone: `62${phoneValue}`,
             address: addressEdit.value
+            // Kita tidak lagi mengirim 'district', 'city', 'province' jika tidak ada di form edit
         };
 
-        Swal.fire({
-            title: 'Menyimpan perubahan...',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
+        Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         try {
             await updateUserProfile(updatedData);
-            await loadProfileData(currentUser.uid);
+            await loadProfileData(); // Muat ulang data untuk menampilkan perubahan
             toggleEditMode(false);
             Swal.fire('Berhasil!', 'Profil Anda telah diperbarui.', 'success');
         } catch (error) {
