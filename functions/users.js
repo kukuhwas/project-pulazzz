@@ -171,12 +171,14 @@ const completeSignup = onCall({ cors: true, region: 'asia-southeast2' }, async (
     return { success: true, message: 'Pendaftaran berhasil!' };
 });
 
-const updateUserProfile = onCall({ region: 'asia-southeast2' }, async (request) => {
+const updateUserProfile = onCall({ cors: true, region: 'asia-southeast2' }, async (request) => {
     if (!request.auth) {
         throw new HttpsError('unauthenticated', 'Anda harus login untuk memperbarui profil.');
     }
+    // Ambil hanya data yang diizinkan dari request
     const { name, phone, address, district, city, province } = request.data;
     const uid = request.auth.uid;
+
     if (!name || !phone || !address) {
         throw new HttpsError('invalid-argument', 'Nama, telepon, dan alamat tidak boleh kosong.');
     }
@@ -184,9 +186,19 @@ const updateUserProfile = onCall({ region: 'asia-southeast2' }, async (request) 
     if (!formattedPhone) {
         throw new HttpsError('invalid-argument', 'Nomor telepon tidak valid.');
     }
+
+    // Buat objek yang hanya berisi field yang boleh diubah pengguna
+    const dataToUpdate = {
+        name,
+        phone: formattedPhone,
+        address,
+        district,
+        city,
+        province
+    };
+
     const profileRef = db.collection('profiles').doc(uid);
     try {
-        const dataToUpdate = { name, phone: formattedPhone, address, district, city, province };
         await profileRef.update(dataToUpdate);
         return { success: true, message: 'Profil berhasil diperbarui.' };
     } catch (error) {
@@ -292,6 +304,45 @@ const listAllUsers = onCall({
     }
 });
 
+const getUserProfile = onCall({ cors: true, region: 'asia-southeast2' }, async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Anda harus login untuk melihat profil.');
+    }
+    const uid = request.auth.uid;
+    const profileRef = db.collection('profiles').doc(uid);
+    const profileDoc = await profileRef.get();
+
+    if (!profileDoc.exists) {
+        throw new HttpsError('not-found', 'Profil tidak ditemukan.');
+    }
+
+    const userProfile = profileDoc.data();
+
+    // Ambil nama pereferensi ("Orang Tua") jika ada
+    if (userProfile.referralId) {
+        const referrerProfileRef = db.collection('profiles').doc(userProfile.referralId);
+        const referrerProfileDoc = await referrerProfileRef.get();
+        if (referrerProfileDoc.exists) {
+            userProfile.referrerName = referrerProfileDoc.data().name || referrerProfileDoc.data().email;
+        } else {
+            userProfile.referrerName = 'Pengguna tidak ditemukan';
+        }
+    }
+
+    // Ambil nama representatif ("Guru") jika ada
+    if (userProfile.representativeId) {
+        const repProfileRef = db.collection('profiles').doc(userProfile.representativeId);
+        const repProfileDoc = await repProfileRef.get();
+        if (repProfileDoc.exists) {
+            userProfile.representativeName = repProfileDoc.data().name || repProfileDoc.data().email;
+        } else {
+            userProfile.representativeName = 'Pengguna tidak ditemukan';
+        }
+    }
+
+    return userProfile;
+});
+
 const createNewUser = onCall({ region: 'asia-southeast2' }, async (request) => {
     if (request.auth.token.role !== 'admin') {
         throw new HttpsError('permission-denied', 'Hanya admin yang bisa membuat pengguna baru.');
@@ -368,6 +419,7 @@ module.exports = {
     updateUserProfile,
     setUserRole,
     listAllUsers,
+    getUserProfile,
     createNewUser,
     deleteUserAndProfile
 };

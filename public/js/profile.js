@@ -1,13 +1,11 @@
-// public/js/profile.js
+// public/js/profile.js (Versi Lengkap Terupdate)
 
-import { db, auth, functions } from './firebase-config.js';
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-firestore.js";
+import { auth, functions } from './firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-auth.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/9.19.1/firebase-functions.js";
 
 document.addEventListener('DOMContentLoaded', () => {
-
-    // --- Referensi Elemen ---
+    // Referensi Elemen Umum
     const loadingIndicator = document.getElementById('loading-indicator');
     const profileContent = document.getElementById('profile-content');
     const roleBadge = document.getElementById('user-role-badge');
@@ -23,11 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const provinceView = document.getElementById('profile-province-view');
     const representativeInfoEl = document.getElementById('representative-info');
     const representativeView = document.getElementById('profile-representative-view');
+    const referralInfoEl = document.getElementById('referral-info');
+    const referrerView = document.getElementById('profile-referrer-view');
 
     // Mode Edit
     const editMode = document.getElementById('edit-mode');
     const nameEdit = document.getElementById('profile-name-edit');
-    const emailEdit = document.getElementById('profile-email-edit');
     const phoneEdit = document.getElementById('profile-phone-edit');
     const addressEdit = document.getElementById('profile-address-edit');
     const addressSearchSelect = document.getElementById('address-search-select');
@@ -41,11 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveProfileBtn = document.getElementById('save-profile-btn');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
 
-    // Referensi Cloud Function
+    // Referensi Cloud Functions
+    const getUserProfile = httpsCallable(functions, 'getUserProfile');
     const updateUserProfile = httpsCallable(functions, 'updateUserProfile');
     const searchAddress = httpsCallable(functions, 'searchAddress');
 
-    // State
     let currentUser = null;
     let profileData = null;
 
@@ -59,10 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleEditMode(isEditing) {
         viewMode.classList.toggle('d-none', isEditing);
         editMode.classList.toggle('d-none', !isEditing);
-
         editProfileBtn.classList.toggle('d-none', isEditing);
         backBtn.classList.toggle('d-none', isEditing);
-
         saveProfileBtn.classList.toggle('d-none', !isEditing);
         cancelEditBtn.classList.toggle('d-none', !isEditing);
     }
@@ -153,10 +150,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadingIndicator.classList.add('d-none');
                 profileContent.classList.remove('d-none');
 
+
+            // Tampilkan info pereferensi ("Orang Tua")
+            if (profileData.referrerName) {
+                referralInfoEl.style.display = 'block';
+                referrerView.textContent = profileData.referrerName;
             } else {
-                loadingIndicator.textContent = 'Gagal menemukan data profil.';
+                referralInfoEl.style.display = 'none';
             }
 
+            loadingIndicator.classList.add('d-none');
+            profileContent.classList.remove('d-none');
         } catch (error) {
             console.error("Gagal memuat profil:", error);
             loadingIndicator.textContent = 'Terjadi kesalahan saat memuat profil.';
@@ -166,9 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
-            loadProfileData(user.uid);
+            loadProfileData();
         } else {
-            loadingIndicator.textContent = 'Anda harus login untuk melihat halaman ini.';
+            // Ditangani oleh auth-guard.js
         }
     });
 
@@ -188,12 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     saveProfileBtn.addEventListener('click', async () => {
         const phoneValue = phoneEdit.value.replace(/\D/g, '');
-        const fullPhone = `62${phoneValue}`;
-        if (fullPhone.length < 11 || fullPhone.length > 15) {
-            Swal.fire('Error', 'Panjang nomor telepon tidak valid.', 'error');
-            return;
-        }
-
         const updatedData = {
             name: nameEdit.value,
             phone: fullPhone,
@@ -203,15 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
             province: hiddenProvinceInput.value
         };
 
-        Swal.fire({
-            title: 'Menyimpan perubahan...',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
+        Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
         try {
             await updateUserProfile(updatedData);
-            await loadProfileData(currentUser.uid);
+            await loadProfileData(); // Muat ulang data untuk menampilkan perubahan
             toggleEditMode(false);
             Swal.fire('Berhasil!', 'Profil Anda telah diperbarui.', 'success');
         } catch (error) {
