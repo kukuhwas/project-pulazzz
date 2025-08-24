@@ -8,6 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -64,7 +65,10 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">Alamat</label>
-                            <p class="fs-5" id="profile-address-view">-</p>
+                            <p id="profile-address-view">-</p>
+                            <p id="profile-district-view" class="mb-0">-</p>
+                            <p id="profile-city-view" class="mb-0">-</p>
+                            <p id="profile-province-view" class="mb-0">-</p>
                         </div>
                     </div>
 
@@ -89,8 +93,15 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="profile-address-edit" class="form-label">Alamat</label>
-                            <textarea id="profile-address-edit" class="form-control" rows="3" required></textarea>
+                            <label for="profile-address-edit" class="form-label">Detail Alamat</label>
+                            <textarea class="form-control" id="profile-address-edit" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address-search-select" class="form-label">Kecamatan / Kota / Provinsi</label>
+                            <select id="address-search-select"></select>
+                            <input type="hidden" id="hidden-province">
+                            <input type="hidden" id="hidden-city">
+                            <input type="hidden" id="hidden-district">
                         </div>
                     </form>
                 </div>
@@ -107,6 +118,7 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script type="module" src="js/firebase-config.js"></script>
     <script type="module" src="js/auth-guard.js"></script>
     <script type="module" src="js/navigation.js"></script>

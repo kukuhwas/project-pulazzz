@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailView = document.getElementById('profile-email-view');
     const phoneView = document.getElementById('profile-phone-view');
     const addressView = document.getElementById('profile-address-view');
+    const districtView = document.getElementById('profile-district-view');
+    const cityView = document.getElementById('profile-city-view');
+    const provinceView = document.getElementById('profile-province-view');
     const representativeInfoEl = document.getElementById('representative-info');
     const representativeView = document.getElementById('profile-representative-view');
 
@@ -27,6 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailEdit = document.getElementById('profile-email-edit');
     const phoneEdit = document.getElementById('profile-phone-edit');
     const addressEdit = document.getElementById('profile-address-edit');
+    const addressSearchSelect = document.getElementById('address-search-select');
+    const hiddenProvinceInput = document.getElementById('hidden-province');
+    const hiddenCityInput = document.getElementById('hidden-city');
+    const hiddenDistrictInput = document.getElementById('hidden-district');
 
     // Tombol
     const backBtn = document.getElementById('back-btn');
@@ -36,10 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Referensi Cloud Function
     const updateUserProfile = httpsCallable(functions, 'updateUserProfile');
+    const searchAddress = httpsCallable(functions, 'searchAddress');
 
     // State
     let currentUser = null;
-
+    let profileData = null;
 
     const roleBadges = {
         admin: { class: 'bg-danger', text: 'Admin' },
@@ -59,28 +67,79 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelEditBtn.classList.toggle('d-none', !isEditing);
     }
 
+    function initializeAddressSearch() {
+        if (addressSearchSelect.tomselect) {
+            addressSearchSelect.tomselect.destroy();
+        }
+        const tomSelect = new TomSelect('#address-search-select', {
+            valueField: 'id',
+            labelField: 'text',
+            searchField: 'text',
+            create: false,
+            placeholder: 'Ketik min. 3 huruf nama kecamatan...',
+            render: {
+                item: (data, escape) => `<div>${escape(data.district)}, ${escape(data.city)}, ${escape(data.province)}</div>`,
+                option: (data, escape) => `<div><strong class="d-block">${escape(data.district)}</strong><small class="text-muted">${escape(data.city)}, ${escape(data.province)}</small></div>`
+            },
+            load: (query, callback) => {
+                if (query.length < 3) return callback();
+                searchAddress({ query: query })
+                    .then(result => callback(result.data))
+                    .catch(error => {
+                        console.error("Gagal mencari alamat:", error);
+                        callback([]);
+                    });
+            }
+        });
+        tomSelect.on('change', (value) => {
+            const selectedData = tomSelect.options[value];
+            if (selectedData) {
+                hiddenProvinceInput.value = selectedData.province;
+                hiddenCityInput.value = selectedData.city;
+                hiddenDistrictInput.value = selectedData.district;
+            }
+        });
+
+        if (profileData && profileData.district) {
+            const initialOption = {
+                id: 'existing',
+                text: `Kec. ${profileData.district}, ${profileData.city}, ${profileData.province}`,
+                district: profileData.district,
+                city: profileData.city,
+                province: profileData.province
+            };
+            tomSelect.addOption(initialOption);
+            tomSelect.setValue('existing');
+        }
+    }
+
     async function loadProfileData(uid) {
         try {
             const profileRef = doc(db, 'profiles', uid);
             const profileSnap = await getDoc(profileRef);
 
             if (profileSnap.exists()) {
-                const profileData = profileSnap.data();
+                profileData = profileSnap.data();
 
                 nameView.textContent = profileData.name || '-';
                 emailView.textContent = profileData.email || '-';
                 phoneView.textContent = profileData.phone || '-';
                 addressView.textContent = profileData.address || '-';
+                districtView.textContent = profileData.district ? `Kec. ${profileData.district}` : '-';
+                cityView.textContent = profileData.city || '-';
+                provinceView.textContent = profileData.province || '-';
 
                 nameEdit.value = profileData.name || '';
                 emailEdit.value = profileData.email || '';
                 phoneEdit.value = (profileData.phone || '').replace('62', '');
                 addressEdit.value = profileData.address || '';
+                hiddenProvinceInput.value = profileData.province || '';
+                hiddenCityInput.value = profileData.city || '';
+                hiddenDistrictInput.value = profileData.district || '';
 
                 const badgeInfo = roleBadges[profileData.role] || { class: 'bg-secondary', text: profileData.role };
                 roleBadge.textContent = badgeInfo.text;
                 roleBadge.className = `badge ${badgeInfo.class}`;
-
 
                 if (profileData.role === 'reseller' && profileData.representativeId) {
                     representativeInfoEl.style.display = 'block';
@@ -115,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     editProfileBtn.addEventListener('click', () => {
         toggleEditMode(true);
+        initializeAddressSearch();
     });
 
     cancelEditBtn.addEventListener('click', () => {
@@ -137,7 +197,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const updatedData = {
             name: nameEdit.value,
             phone: fullPhone,
-            address: addressEdit.value
+            address: addressEdit.value,
+            district: hiddenDistrictInput.value,
+            city: hiddenCityInput.value,
+            province: hiddenProvinceInput.value
         };
 
         Swal.fire({
@@ -157,3 +220,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+

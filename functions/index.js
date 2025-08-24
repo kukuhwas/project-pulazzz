@@ -9,12 +9,12 @@ admin.initializeApp();
 const userFunctions = require('./users.js');
 const orderFunctions = require('./orders.js');
 const invoicingFunctions = require('./invoicing.js');
-const locationFunctions = require('./locations.js'); // <-- TAMBAHKAN INI
+const { searchAddress } = require('./locations.js');
 
 // Ekspor semua fungsi yang sudah diimpor agar bisa dideteksi oleh Firebase
 module.exports = {
     ...userFunctions,
     ...orderFunctions,
     ...invoicingFunctions,
-    ...locationFunctions, // <-- TAMBAHKAN INI
+    searchAddress,
 };
