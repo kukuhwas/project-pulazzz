@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailView = document.getElementById('profile-email-view');
     const phoneView = document.getElementById('profile-phone-view');
     const addressView = document.getElementById('profile-address-view');
+    const districtView = document.getElementById('profile-district-view');
+    const cityView = document.getElementById('profile-city-view');
+    const provinceView = document.getElementById('profile-province-view');
     const representativeInfoEl = document.getElementById('representative-info');
     const representativeView = document.getElementById('profile-representative-view');
     const referralInfoEl = document.getElementById('referral-info');
@@ -26,6 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const nameEdit = document.getElementById('profile-name-edit');
     const phoneEdit = document.getElementById('profile-phone-edit');
     const addressEdit = document.getElementById('profile-address-edit');
+    const addressSearchSelect = document.getElementById('address-search-select');
+    const hiddenProvinceInput = document.getElementById('hidden-province');
+    const hiddenCityInput = document.getElementById('hidden-city');
+    const hiddenDistrictInput = document.getElementById('hidden-district');
 
     // Tombol
     const backBtn = document.getElementById('back-btn');
@@ -36,8 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Referensi Cloud Functions
     const getUserProfile = httpsCallable(functions, 'getUserProfile');
     const updateUserProfile = httpsCallable(functions, 'updateUserProfile');
+    const searchAddress = httpsCallable(functions, 'searchAddress');
 
     let currentUser = null;
+    let profileData = null;
 
     const roleBadges = {
         admin: { class: 'bg-danger', text: 'Admin' },
@@ -55,35 +64,92 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelEditBtn.classList.toggle('d-none', !isEditing);
     }
 
-    async function loadProfileData() {
-        if (!currentUser) return;
-        try {
-            const result = await getUserProfile();
-            const profileData = result.data;
-
-            // Isi Mode Lihat
-            nameView.textContent = profileData.name || '-';
-            emailView.textContent = profileData.email || '-';
-            phoneView.textContent = profileData.phone || '-';
-            addressView.textContent = profileData.address || '-';
-
-            // Isi Mode Edit (untuk persiapan)
-            nameEdit.value = profileData.name || '';
-            phoneEdit.value = (profileData.phone || '').replace('62', '');
-            addressEdit.value = profileData.address || '';
-
-            // Set badge peran
-            const badgeInfo = roleBadges[profileData.role] || { class: 'bg-secondary', text: profileData.role };
-            roleBadge.textContent = badgeInfo.text;
-            roleBadge.className = `badge ${badgeInfo.class}`;
-
-            // Tampilkan info representatif ("Guru")
-            if (profileData.representativeName) {
-                representativeInfoEl.style.display = 'block';
-                representativeView.textContent = profileData.representativeName;
-            } else {
-                representativeInfoEl.style.display = 'none';
+    function initializeAddressSearch() {
+        if (addressSearchSelect.tomselect) {
+            addressSearchSelect.tomselect.destroy();
+        }
+        const tomSelect = new TomSelect('#address-search-select', {
+            valueField: 'id',
+            labelField: 'text',
+            searchField: 'text',
+            create: false,
+            placeholder: 'Ketik min. 3 huruf nama kecamatan...',
+            render: {
+                item: (data, escape) => `<div>${escape(data.district)}, ${escape(data.city)}, ${escape(data.province)}</div>`,
+                option: (data, escape) => `<div><strong class="d-block">${escape(data.district)}</strong><small class="text-muted">${escape(data.city)}, ${escape(data.province)}</small></div>`
+            },
+            load: (query, callback) => {
+                if (query.length < 3) return callback();
+                searchAddress({ query: query })
+                    .then(result => callback(result.data))
+                    .catch(error => {
+                        console.error("Gagal mencari alamat:", error);
+                        callback([]);
+                    });
             }
+        });
+        tomSelect.on('change', (value) => {
+            const selectedData = tomSelect.options[value];
+            if (selectedData) {
+                hiddenProvinceInput.value = selectedData.province;
+                hiddenCityInput.value = selectedData.city;
+                hiddenDistrictInput.value = selectedData.district;
+            }
+        });
+
+        if (profileData && profileData.district) {
+            const initialOption = {
+                id: 'existing',
+                text: `Kec. ${profileData.district}, ${profileData.city}, ${profileData.province}`,
+                district: profileData.district,
+                city: profileData.city,
+                province: profileData.province
+            };
+            tomSelect.addOption(initialOption);
+            tomSelect.setValue('existing');
+        }
+    }
+
+    async function loadProfileData(uid) {
+        try {
+            const profileRef = doc(db, 'profiles', uid);
+            const profileSnap = await getDoc(profileRef);
+
+            if (profileSnap.exists()) {
+                profileData = profileSnap.data();
+
+                nameView.textContent = profileData.name || '-';
+                emailView.textContent = profileData.email || '-';
+                phoneView.textContent = profileData.phone || '-';
+                addressView.textContent = profileData.address || '-';
+                districtView.textContent = profileData.district ? `Kec. ${profileData.district}` : '-';
+                cityView.textContent = profileData.city || '-';
+                provinceView.textContent = profileData.province || '-';
+
+                nameEdit.value = profileData.name || '';
+                emailEdit.value = profileData.email || '';
+                phoneEdit.value = (profileData.phone || '').replace('62', '');
+                addressEdit.value = profileData.address || '';
+                hiddenProvinceInput.value = profileData.province || '';
+                hiddenCityInput.value = profileData.city || '';
+                hiddenDistrictInput.value = profileData.district || '';
+
+                const badgeInfo = roleBadges[profileData.role] || { class: 'bg-secondary', text: profileData.role };
+                roleBadge.textContent = badgeInfo.text;
+                roleBadge.className = `badge ${badgeInfo.class}`;
+
+                if (profileData.role === 'reseller' && profileData.representativeId) {
+                    representativeInfoEl.style.display = 'block';
+                    const repRef = doc(db, 'profiles', profileData.representativeId);
+                    const repSnap = await getDoc(repRef);
+                    representativeView.textContent = repSnap.exists() ? (repSnap.data().name || repSnap.data().email) : 'Data representatif tidak ditemukan.';
+                } else {
+                    representativeInfoEl.style.display = 'none';
+                }
+
+                loadingIndicator.classList.add('d-none');
+                profileContent.classList.remove('d-none');
+
 
             // Tampilkan info pereferensi ("Orang Tua")
             if (profileData.referrerName) {
@@ -110,17 +176,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    editProfileBtn.addEventListener('click', () => toggleEditMode(true));
-    cancelEditBtn.addEventListener('click', () => toggleEditMode(false));
-    backBtn.addEventListener('click', () => window.location.href = 'dashboard.html');
+    editProfileBtn.addEventListener('click', () => {
+        toggleEditMode(true);
+        initializeAddressSearch();
+    });
+
+    cancelEditBtn.addEventListener('click', () => {
+        toggleEditMode(false);
+        if (currentUser) loadProfileData(currentUser.uid);
+    });
+
+    backBtn.addEventListener('click', () => {
+        window.location.href = 'dashboard.html';
+    });
 
     saveProfileBtn.addEventListener('click', async () => {
         const phoneValue = phoneEdit.value.replace(/\D/g, '');
         const updatedData = {
             name: nameEdit.value,
-            phone: `62${phoneValue}`,
-            address: addressEdit.value
-            // Kita tidak lagi mengirim 'district', 'city', 'province' jika tidak ada di form edit
+            phone: fullPhone,
+            address: addressEdit.value,
+            district: hiddenDistrictInput.value,
+            city: hiddenCityInput.value,
+            province: hiddenProvinceInput.value
         };
 
         Swal.fire({ title: 'Menyimpan...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -136,3 +214,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
